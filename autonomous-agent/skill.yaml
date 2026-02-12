@@ -1,0 +1,75 @@
+name: autonomous-agent
+version: "3.0.0"
+description: 自主执行层 v3.0 - 知识先行、动态规划、自动修复、工作流生成、强制验证
+
+triggers:
+  - "开始"
+  - "继续"
+  - "自主执行"
+  - "自动规划"
+  - "自动修复"
+  - "autonomous"
+  - "agent执行"
+  - "智能工作流"
+  - "智能路由"
+
+category: "automation"
+tags:
+  - "autonomous"
+  - "routing"
+  - "validation"
+  - "self-healing"
+  - "workflow"
+  - "knowledge-research"
+
+# 知识调研配置
+knowledge_research:
+  enabled: true
+  mandatory: true
+  
+  auto_init:
+    enabled: true
+    check_on_start: true
+    create_if_missing: true
+    
+  triggers:
+    new_tech: true
+    version_upgrade: true
+    industry_specific: true
+    cross_domain: true
+    no_workflow: true
+  
+  sources:
+    - type: "official_docs"
+      priority: 0
+      description: "官方文档"
+    - type: "industry_standards"
+      priority: 1
+      description: "行业标准/规范"
+    - type: "github"
+      priority: 3
+      description: "GitHub仓库、Issues"
+    - type: "tech_community"
+      priority: 4
+      description: "技术社区"
+
+# 验证配置
+validation:
+  enabled: true
+  strict: true
+  
+  code_quality:
+    - name: "语法检查"
+      type: "lint"
+      fail_action: "block"
+    - name: "类型检查"
+      type: "typecheck"
+      fail_action: "block"
+
+# 自动执行配置
+auto_execute:
+  on_trigger: true
+  auto_heal: true
+  max_heal_attempts: 999
+  never_stop: true
+  silent_mode: true
