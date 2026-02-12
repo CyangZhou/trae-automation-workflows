@@ -1,0 +1,80 @@
+name: 项目统计
+description: 统计项目代码量、文件数等信息
+version: "2.0.0"
+created_at: "2026-02-11T11:00:00"
+triggers:
+  - "统计项目"
+  - "project stats"
+  - "代码统计"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "mkdir -p output"
+      timeout: 5
+
+  - id: 2
+    name: 统计Python代码
+    action: run_command
+    params:
+      command: "find . -name '*.py' -not -path './venv/*' -not -path './__pycache__/*' | xargs wc -l 2>/dev/null | tail -1"
+      save_as: python_stats
+      timeout: 30
+
+  - id: 3
+    name: 统计JS/TS代码
+    action: run_command
+    params:
+      command: "find . -name '*.js' -o -name '*.ts' -o -name '*.jsx' -o -name '*.tsx' -not -path './node_modules/*' | xargs wc -l 2>/dev/null | tail -1"
+      save_as: js_stats
+      timeout: 30
+
+  - id: 4
+    name: 统计配置文件
+    action: run_command
+    params:
+      command: "find . -name '*.yaml' -o -name '*.yml' -o -name '*.json' -o -name '*.toml' -not -path './venv/*' -not -path './node_modules/*' | wc -l"
+      save_as: config_stats
+      timeout: 15
+
+  - id: 5
+    name: 统计文档文件
+    action: run_command
+    params:
+      command: "find . -name '*.md' -o -name '*.rst' -o -name '*.txt' -not -path './venv/*' -not -path './node_modules/*' | wc -l"
+      save_as: doc_stats
+      timeout: 15
+
+  - id: 6
+    name: 生成统计报告
+    action: generate_document
+    params:
+      output: "output/project-stats-{{current_date}}.md"
+      content: |
+        # 项目统计报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 代码统计
+        
+        ### Python代码
+        {{python_stats}}
+        
+        ### JS/TS代码
+        {{js_stats}}
+        
+        ## 文件统计
+        
+        - 配置文件: {{config_stats}} 个
+        - 文档文件: {{doc_stats}} 个
+        
+        ---
+        *由 Trae 自动生成*
+
+  - id: 7
+    name: 完成通知
+    action: notify
+    params:
+      message: "✅ 项目统计完成！报告: output/project-stats-{{current_date}}.md"
