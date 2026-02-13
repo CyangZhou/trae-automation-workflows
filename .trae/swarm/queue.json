@@ -1,0 +1,82 @@
+{
+  "version": "1.0",
+  "created_at": "2026-02-13T12:31:42.121155",
+  "main_task_id": "main_819bdacb",
+  "tasks": {
+    "task_001": {
+      "task_id": "task_001",
+      "description": "调研小游戏修复方案和创意内容",
+      "worker_type": "researcher",
+      "dependencies": [],
+      "status": "pending"
+    },
+    "task_002": {
+      "task_id": "task_002",
+      "description": "修复页面中的小游戏功能",
+      "worker_type": "coder",
+      "dependencies": [
+        "task_001"
+      ],
+      "status": "pending"
+    },
+    "task_003": {
+      "task_id": "task_003",
+      "description": "保持红色喜庆风格并添加创意内容",
+      "worker_type": "coder",
+      "dependencies": [
+        "task_001"
+      ],
+      "status": "pending"
+    },
+    "task_004": {
+      "task_id": "task_004",
+      "description": "验证所有游戏功能正常运行",
+      "worker_type": "tester",
+      "dependencies": [
+        "task_002",
+        "task_003"
+      ],
+      "status": "pending"
+    },
+    "task_005": {
+      "task_id": "task_005",
+      "description": "上传到GitHub并部署网页",
+      "worker_type": "coder",
+      "dependencies": [
+        "task_004"
+      ],
+      "status": "pending"
+    }
+  },
+  "dag": {
+    "task_001": [],
+    "task_002": [
+      "task_001"
+    ],
+    "task_003": [
+      "task_001"
+    ],
+    "task_004": [
+      "task_002",
+      "task_003"
+    ],
+    "task_005": [
+      "task_004"
+    ]
+  },
+  "execution_order": [
+    [
+      "task_001"
+    ],
+    [
+      "task_002",
+      "task_003"
+    ],
+    [
+      "task_004"
+    ],
+    [
+      "task_005"
+    ]
+  ]
+}

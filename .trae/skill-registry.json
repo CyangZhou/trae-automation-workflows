@@ -1,0 +1,94 @@
+{
+  "version": "2.0.0",
+  "last_updated": "2026-02-13T15:00:00.000000",
+  "installed_skills": [
+    {
+      "name": "autonomous-agent",
+      "version": "6.0.0",
+      "path": "e:\\traework\\00 ai助手研发\\.trae\\skills\\autonomous-agent",
+      "source": "local",
+      "enabled": true,
+      "installed_at": "2026-02-13T15:00:00.000000",
+      "description": "自主执行总调度器 v6.0 - 任务解析 → 智能推荐 → 蜂群/单Agent执行 → 验证验收 → 知识沉淀",
+      "triggers": ["开始", "继续", "自主执行", "自动规划", "autonomous"],
+      "dependencies": ["intelligent-workflow-assistant", "swarm-orchestrator", "workflow-runner"]
+    },
+    {
+      "name": "intelligent-workflow-assistant",
+      "version": "4.0.0",
+      "path": "e:\\traework\\00 ai助手研发\\.trae\\skills\\intelligent-workflow-assistant",
+      "source": "local",
+      "enabled": true,
+      "installed_at": "2026-02-13T15:00:00.000000",
+      "description": "智能工作流助手 v4.0 - 项目分析、工作流推荐、执行模式决策",
+      "triggers": ["帮我看看项目", "智能工作流", "检查项目", "推荐工作流"]
+    },
+    {
+      "name": "swarm-orchestrator",
+      "version": "2.0.0",
+      "path": "e:\\traework\\00 ai助手研发\\.trae\\skills\\swarm-orchestrator",
+      "source": "local",
+      "enabled": true,
+      "installed_at": "2026-02-13T15:00:00.000000",
+      "description": "智能体蜂群调度器 v2.0 - 任务分解、DAG构建、Worker分发、并行执行",
+      "triggers": ["蜂群", "并行执行", "多智能体", "swarm", "/swarm", "启动蜂群"]
+    },
+    {
+      "name": "workflow-runner",
+      "version": "2.0.0",
+      "path": "e:\\traework\\00 ai助手研发\\.trae\\skills\\workflow-runner",
+      "source": "local",
+      "enabled": true,
+      "installed_at": "2026-02-11T11:34:09.162372",
+      "description": "工作流执行器 - 执行预定义工作流、蜂群模式执行",
+      "triggers": ["git-commit-summary", "project-stats", "swarm-execution"]
+    },
+    {
+      "name": "neuro-bridge",
+      "version": "1.0.0",
+      "path": "e:\\traework\\00 ai助手研发\\.trae\\skills\\neuro-bridge",
+      "source": "local",
+      "enabled": true,
+      "installed_at": "2026-02-11T11:19:28.091090"
+    },
+    {
+      "name": "skill-market-hub",
+      "version": "1.0.0",
+      "path": "e:\\traework\\00 ai助手研发\\.trae\\skills\\skill-market-hub",
+      "source": "local",
+      "enabled": true,
+      "installed_at": "2026-02-11T11:19:28.091090"
+    },
+    {
+      "name": "workflow-market",
+      "version": "1.0.0",
+      "path": "e:\\traework\\00 ai助手研发\\.trae\\skills\\workflow-market",
+      "source": "local",
+      "enabled": true,
+      "installed_at": "2026-02-11T11:56:54.220029"
+    }
+  ],
+  "skill_sources": [
+    {
+      "name": "github",
+      "url": "https://github.com",
+      "type": "git"
+    },
+    {
+      "name": "local",
+      "url": "local",
+      "type": "local"
+    }
+  ],
+  "execution_protocol": {
+    "version": "1.0",
+    "description": "Skill 执行协议 - 当 Skill 被触发时，Agent 必须按照 SKILL.md 中的执行协议执行",
+    "rules": [
+      "1. 读取 SKILL.md 中的 🚨 执行协议 部分",
+      "2. 按照步骤顺序执行",
+      "3. 执行必要的 Python 命令",
+      "4. 返回规定格式的结果",
+      "5. 继续调用链中的下一个 Skill"
+    ]
+  }
+}

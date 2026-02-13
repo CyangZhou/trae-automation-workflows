@@ -1,0 +1,369 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-02-11T15:00:00",
+  "description": "工作流来源记录，避免重复下载",
+  "sources": {
+    "github": [
+      {
+        "name": "Awesome GitHub Actions",
+        "url": "https://github.com/sdras/awesome-actions",
+        "type": "awesome-list",
+        "category": "ci-cd",
+        "status": "tracked",
+        "workflows_count": 0
+      },
+      {
+        "name": "GitHub Actions Starter Workflows",
+        "url": "https://github.com/actions/starter-workflows",
+        "type": "official",
+        "category": "ci-cd",
+        "status": "tracked",
+        "workflows_count": 10
+      }
+    ],
+    "n8n": [
+      {
+        "name": "n8n Templates Library",
+        "url": "https://n8ntemplateslibrary.com/",
+        "type": "community",
+        "category": "automation",
+        "status": "pending",
+        "workflows_count": 2200,
+        "note": "需要格式转换"
+      },
+      {
+        "name": "Have Workflow",
+        "url": "https://haveworkflow.com/",
+        "type": "marketplace",
+        "category": "automation",
+        "status": "pending",
+        "workflows_count": 0
+      }
+    ],
+    "dify": [
+      {
+        "name": "Dify Workflow DSL Examples",
+        "url": "https://github.com/bannylon7/Dify-Workflow-DSL-Examples",
+        "type": "community",
+        "category": "ai-automation",
+        "status": "pending",
+        "workflows_count": 0,
+        "note": "B站UP主整理",
+        "article": "https://blog.csdn.net/2303_77200324/article/details/155003224"
+      },
+      {
+        "name": "Dify 智能家居Workflow",
+        "url": "https://blog.csdn.net/zedyer/article/details/150496385",
+        "type": "article",
+        "category": "smart-home",
+        "status": "pending",
+        "workflows_count": 10
+      }
+    ],
+    "sim": [
+      {
+        "name": "sim Open-source AI Agent",
+        "url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+        "type": "open-source",
+        "category": "ai-automation",
+        "status": "downloaded",
+        "workflows_count": 9,
+        "downloaded_at": "2026-02-11",
+        "article": "https://blog.csdn.net/gitblog_00754/article/details/151238313",
+        "local_workflows": [
+          "slack-message-classifier.yaml",
+          "pr-review-assistant.yaml",
+          "support-ticket-automation.yaml",
+          "content-publisher.yaml",
+          "meeting-minutes-auto.yaml",
+          "sales-lead-nurturing.yaml",
+          "resume-screening.yaml",
+          "invoice-processing.yaml",
+          "log-anomaly-detection.yaml"
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "name": "n8n Automations 500+模板",
+        "url": "http://m.toutiao.com/group/7539198400396100131/",
+        "type": "article",
+        "category": "automation",
+        "status": "pending",
+        "workflows_count": 500,
+        "note": "覆盖邮件处理、Telegram机器人、PDF解析等"
+      }
+    ]
+  },
+  "downloaded_workflows": [
+    {
+      "id": "970082505f8d",
+      "name": "Hello World测试",
+      "source": "local",
+      "source_url": null,
+      "local_path": "hello-world.yaml",
+      "downloaded_at": "2026-02-11T11:35:00",
+      "category": "testing"
+    },
+    {
+      "id": "738d53e24eca",
+      "name": "代码审查助手",
+      "source": "local",
+      "source_url": null,
+      "local_path": "code-review.yaml",
+      "downloaded_at": "2026-02-11T11:46:00",
+      "category": "code-quality"
+    },
+    {
+      "id": "87ea857f8e1f",
+      "name": "会议纪要生成",
+      "source": "local",
+      "source_url": null,
+      "local_path": "meeting-minutes.yaml",
+      "downloaded_at": "2026-02-11T11:46:00",
+      "category": "documentation"
+    },
+    {
+      "id": "f99ffec1cdf2",
+      "name": "Git提交摘要",
+      "source": "local",
+      "source_url": null,
+      "local_path": "git-commit-summary.yaml",
+      "downloaded_at": "2026-02-11T11:17:00",
+      "category": "documentation"
+    },
+    {
+      "id": "47dc9795f455",
+      "name": "项目统计",
+      "source": "local",
+      "source_url": null,
+      "local_path": "project-stats.yaml",
+      "downloaded_at": "2026-02-11T11:17:00",
+      "category": "project-mgmt"
+    },
+    {
+      "id": "7d692e8ad26c",
+      "name": "每日站会报告",
+      "source": "local",
+      "source_url": null,
+      "local_path": "daily-standup.yaml",
+      "downloaded_at": "2026-02-11T11:46:00",
+      "category": "project-mgmt"
+    },
+    {
+      "id": "75f0b7c2c26b",
+      "name": "依赖检查",
+      "source": "local",
+      "source_url": null,
+      "local_path": "dependency-check.yaml",
+      "downloaded_at": "2026-02-11T11:46:00",
+      "category": "security"
+    },
+    {
+      "id": "18618eb6b02c",
+      "name": "创建项目README",
+      "source": "local",
+      "source_url": null,
+      "local_path": "create-readme.yaml",
+      "downloaded_at": "2026-02-11T11:34:00",
+      "category": "documentation"
+    },
+    {
+      "id": "6a4b298fbf0f",
+      "name": "生成发布说明",
+      "source": "local",
+      "source_url": null,
+      "local_path": "release-notes.yaml",
+      "downloaded_at": "2026-02-11T11:46:00",
+      "category": "documentation"
+    },
+    {
+      "id": "a1b2c3d4e5f6",
+      "name": "Slack消息智能分类",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "slack-message-classifier.yaml",
+      "downloaded_at": "2026-02-11T14:00:00",
+      "category": "automation",
+      "original_template": "Slack消息智能分类与响应系统"
+    },
+    {
+      "id": "b2c3d4e5f6g7",
+      "name": "PR智能审核助手",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "pr-review-assistant.yaml",
+      "downloaded_at": "2026-02-11T14:05:00",
+      "category": "code-quality",
+      "original_template": "GitHub PR智能审核助手"
+    },
+    {
+      "id": "c3d4e5f6g7h8",
+      "name": "客户支持工单自动处理",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "support-ticket-automation.yaml",
+      "downloaded_at": "2026-02-11T14:10:00",
+      "category": "automation",
+      "original_template": "客户支持工单自动处理系统"
+    },
+    {
+      "id": "d4e5f6g7h8i9",
+      "name": "多平台内容自动发布",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "content-publisher.yaml",
+      "downloaded_at": "2026-02-11T14:15:00",
+      "category": "automation",
+      "original_template": "多平台内容自动发布系统"
+    },
+    {
+      "id": "e5f6g7h8i9j0",
+      "name": "会议记录自动整理",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "meeting-minutes-auto.yaml",
+      "downloaded_at": "2026-02-11T14:20:00",
+      "category": "documentation",
+      "original_template": "会议记录自动整理与行动项分配"
+    },
+    {
+      "id": "f6g7h8i9j0k1",
+      "name": "销售线索智能培育",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "sales-lead-nurturing.yaml",
+      "downloaded_at": "2026-02-11T14:25:00",
+      "category": "automation",
+      "original_template": "销售线索智能培育系统"
+    },
+    {
+      "id": "g7h8i9j0k1l2",
+      "name": "简历自动筛选",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "resume-screening.yaml",
+      "downloaded_at": "2026-02-11T14:30:00",
+      "category": "automation",
+      "original_template": "简历自动筛选与面试安排"
+    },
+    {
+      "id": "h8i9j0k1l2m3",
+      "name": "财务发票自动处理",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "invoice-processing.yaml",
+      "downloaded_at": "2026-02-11T14:35:00",
+      "category": "automation",
+      "original_template": "财务发票自动处理系统"
+    },
+    {
+      "id": "i9j0k1l2m3n4",
+      "name": "系统日志异常检测",
+      "source": "sim",
+      "source_url": "https://gitcode.com/GitHub_Trending/sim16/sim",
+      "local_path": "log-anomaly-detection.yaml",
+      "downloaded_at": "2026-02-11T14:40:00",
+      "category": "monitoring",
+      "original_template": "系统日志异常检测与告警"
+    },
+    {
+      "id": "j0k1l2m3n4o5",
+      "name": "YouTube竞品调研",
+      "source": "article",
+      "source_url": "http://m.toutiao.com/group/7599895148641649202/",
+      "local_path": "youtube-research.yaml",
+      "downloaded_at": "2026-02-11T15:30:00",
+      "category": "automation",
+      "original_template": "YouTube竞品调研自动化"
+    },
+    {
+      "id": "k1l2m3n4o5p6",
+      "name": "API文档自动生成",
+      "source": "local",
+      "source_url": null,
+      "local_path": "api-documentation.yaml",
+      "downloaded_at": "2026-02-11T15:35:00",
+      "category": "documentation"
+    },
+    {
+      "id": "l2m3n4o5p6q7",
+      "name": "代码重构助手",
+      "source": "local",
+      "source_url": null,
+      "local_path": "code-refactor.yaml",
+      "downloaded_at": "2026-02-11T15:40:00",
+      "category": "code-quality"
+    },
+    {
+      "id": "m3n4o5p6q7r8",
+      "name": "测试自动化",
+      "source": "github",
+      "source_url": "https://github.com/actions/starter-workflows",
+      "local_path": "test-automation.yaml",
+      "downloaded_at": "2026-02-11T15:45:00",
+      "category": "testing",
+      "original_template": "GitHub Actions CI/CD Testing"
+    },
+    {
+      "id": "n4o5p6q7r8s9",
+      "name": "数据处理自动化",
+      "source": "local",
+      "source_url": null,
+      "local_path": "data-processing.yaml",
+      "downloaded_at": "2026-02-11T15:50:00",
+      "category": "automation"
+    },
+    {
+      "id": "o5p6q7r8s9t0",
+      "name": "邮件自动化处理",
+      "source": "n8n",
+      "source_url": "https://n8ntemplateslibrary.com/",
+      "local_path": "email-automation.yaml",
+      "downloaded_at": "2026-02-11T15:55:00",
+      "category": "automation",
+      "original_template": "Email Automation Template"
+    }
+  ],
+  "pending_sources": [
+    {
+      "name": "n8n Templates Library",
+      "url": "https://n8ntemplateslibrary.com/",
+      "estimated_workflows": 2200,
+      "priority": "medium"
+    },
+    {
+      "name": "Dify Workflow DSL Examples",
+      "url": "https://github.com/bannylon7/Dify-Workflow-DSL-Examples",
+      "estimated_workflows": 0,
+      "priority": "low"
+    },
+    {
+      "name": "n8n Automations 500+模板",
+      "url": "http://m.toutiao.com/group/7539198400396100131/",
+      "estimated_workflows": 500,
+      "priority": "medium"
+    }
+  ],
+  "stats": {
+    "total_downloaded": 25,
+    "total_pending": 3,
+    "by_source": {
+      "local": 12,
+      "sim": 9,
+      "github": 1,
+      "n8n": 1,
+      "dify": 0,
+      "article": 2
+    },
+    "by_category": {
+      "automation": 10,
+      "code-quality": 3,
+      "documentation": 6,
+      "project-mgmt": 2,
+      "security": 1,
+      "monitoring": 1,
+      "testing": 2
+    }
+  }
+}

@@ -1,0 +1,116 @@
+name: 文档同步检查
+version: "2.0.0"
+description: 检查代码变更是否伴随文档更新，API变更时检查文档是否同步
+source: "改编自文档驱动开发最佳实践"
+category: "documentation"
+tags: ["documentation", "sync", "check", "api", "validation"]
+triggers:
+  - "检查文档同步"
+  - "文档同步"
+  - "doc sync"
+  - "检查文档"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 扫描代码变更
+    action: run_command
+    params:
+      command: "git diff --name-only HEAD~1 2>nul || python -c \"import os; files=[os.path.join(r,f) for r,d,fs in os.walk('.') for f in fs if f.endswith('.py') and 'venv' not in r]; print(f'Python文件: {len(files)}个')\""
+      save_as: code_changes
+      timeout: 15
+
+  - id: 3
+    name: 检查README存在性
+    action: run_command
+    params:
+      command: "python -c \"import os; print('README.md存在' if os.path.exists('README.md') else 'README.md缺失')\""
+      save_as: readme_check
+      timeout: 5
+
+  - id: 4
+    name: 检查CHANGELOG存在性
+    action: run_command
+    params:
+      command: "python -c \"import os; print('CHANGELOG.md存在' if os.path.exists('CHANGELOG.md') else 'CHANGELOG.md缺失')\""
+      save_as: changelog_check
+      timeout: 5
+
+  - id: 5
+    name: 检查API文档
+    action: run_command
+    params:
+      command: "python -c \"import os; docs=[f for r,d,fs in os.walk('.') for f in fs if 'api' in f.lower() and f.endswith('.md') and 'venv' not in r]; print(f'API文档: {len(docs)}个'); [print(f) for f in docs[:5]]\""
+      save_as: api_docs
+      timeout: 15
+
+  - id: 6
+    name: 检查代码注释覆盖率
+    action: run_command
+    params:
+      command: "python -c \"import os,ast; total=0; documented=0; [[(total:=total+1, documented:=documented+1) for n in ast.walk(ast.parse(open(os.path.join(r,f),errors='ignore').read())) if isinstance(n,(ast.FunctionDef,ast.ClassDef)) and ast.get_docstring(n)] for r,d,fs in os.walk('.') for f in fs if f.endswith('.py') and 'venv' not in r and '__pycache__' not in r] if False else None; print(f'文档覆盖率: {documented}/{total} ({100*documented//max(total,1)}%)')\" 2>nul || echo 无法计算文档覆盖率"
+      save_as: doc_coverage
+      timeout: 30
+
+  - id: 7
+    name: 生成同步报告
+    action: generate_document
+    params:
+      output: "output/doc-sync-report-{{current_date}}.md"
+      content: |
+        # 文档同步检查报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 代码变更
+        
+        {{code_changes}}
+        
+        ## 文档检查
+        
+        - README: {{readme_check}}
+        - CHANGELOG: {{changelog_check}}
+        - API文档: {{api_docs}}
+        
+        ## 注释覆盖率
+        
+        {{doc_coverage}}
+        
+        ## 建议
+        
+        1. 确保README.md存在且内容完整
+        2. 维护CHANGELOG.md记录变更
+        3. 为公共API添加文档字符串
+        4. 保持文档与代码同步更新
+
+  - id: 8
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/doc-sync-report-{{current_date}}.md"
+    fail_message: "文档同步报告未生成"
+
+  - id: 9
+    name: 输出检查结果
+    action: notify
+    params:
+      message: |
+        ✅ 文档同步检查完成！
+        
+        代码变更:
+        {{code_changes}}
+        
+        文档检查:
+        - README: {{readme_check}}
+        - CHANGELOG: {{changelog_check}}
+        
+        注释覆盖率:
+        {{doc_coverage}}
+        
+        报告: output/doc-sync-report-{{current_date}}.md

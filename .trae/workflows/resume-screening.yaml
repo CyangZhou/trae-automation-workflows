@@ -1,0 +1,67 @@
+name: 简历自动筛选
+version: "1.0.0"
+description: PDF解析、技能提取、匹配度评分和面试安排
+created_at: "2026-02-11T14:30:00"
+source: "改编自sim工作流模板库"
+category: "automation"
+tags: ["hr", "recruitment", "resume", "automation", "screening"]
+triggers:
+  - "筛选简历"
+  - "简历处理"
+  - "hr自动化"
+  - "resume screening"
+steps:
+  - id: 1
+    name: 获取简历文件
+    action: run_command
+    params:
+      command: "echo 获取上传的简历文件..."
+      save_as: resume_files
+      timeout: 5
+
+  - id: 2
+    name: 解析PDF内容
+    action: run_command
+    params:
+      command: "echo 解析PDF提取文本内容..."
+      save_as: resume_content
+      timeout: 10
+
+  - id: 3
+    name: 提取技能和经验
+    action: run_command
+    params:
+      command: "echo 使用AI提取技能和项目经验..."
+      save_as: skills_extracted
+      timeout: 15
+
+  - id: 4
+    name: 计算匹配度评分
+    action: run_command
+    params:
+      command: "echo 根据职位要求计算匹配度..."
+      save_as: match_score
+      timeout: 10
+
+  - id: 5
+    name: 生成筛选报告
+    action: generate_document
+    params:
+      template: "resume-screening.md"
+      variables:
+        content: "{{resume_content}}"
+        skills: "{{skills_extracted}}"
+        score: "{{match_score}}"
+        date: "{{current_date}}"
+      output: "docs/resume-screening-{{current_date}}.md"
+      save_as: screening_report
+
+  - id: 6
+    name: 输出筛选结果
+    action: notify
+    params:
+      message: |
+        简历筛选完成！
+        提取技能: {{skills_extracted}}
+        匹配度评分: {{match_score}}
+        完整报告: {{screening_report}}

@@ -1,0 +1,78 @@
+name: swarm-orchestrator
+version: "1.0.0"
+description: 智能体蜂群调度器 - 任务分解、DAG构建、Worker分发、并行执行
+
+triggers:
+  - "蜂群"
+  - "并行执行"
+  - "多智能体"
+  - "swarm"
+  - "/swarm"
+  - "蜂群模式"
+
+category: "automation"
+tags:
+  - "swarm"
+  - "parallel"
+  - "orchestration"
+  - "multi-agent"
+  - "dag"
+
+config:
+  max_concurrent_workers: 5
+  default_timeout: 300
+  max_retries: 3
+  queue_poll_interval: 5
+  
+  workers:
+    researcher:
+      timeout: 180
+      max_instances: 2
+      capabilities:
+        - "联网搜索"
+        - "知识提取"
+        - "文档阅读"
+    coder:
+      timeout: 600
+      max_instances: 3
+      capabilities:
+        - "代码编写"
+        - "重构"
+        - "修复"
+    tester:
+      timeout: 300
+      max_instances: 2
+      capabilities:
+        - "功能测试"
+        - "边界测试"
+        - "验证"
+    writer:
+      timeout: 180
+      max_instances: 1
+      capabilities:
+        - "文档编写"
+        - "API文档"
+        - "README"
+    reviewer:
+      timeout: 180
+      max_instances: 1
+      capabilities:
+        - "代码审查"
+        - "安全检查"
+        - "质量评估"
+
+integration:
+  parent: autonomous-agent
+  layer: 3
+  calls:
+    - workflow-runner
+
+communication:
+  queue_file: ".trae/swarm/queue.json"
+  status_file: ".trae/swarm/status.json"
+  results_dir: ".trae/swarm/results"
+  heartbeat_file: ".trae/swarm/heartbeat.json"
+
+output:
+  report_dir: "output/swarm"
+  report_format: "markdown"

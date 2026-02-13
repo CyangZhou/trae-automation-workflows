@@ -1,0 +1,44 @@
+name: 生成发布说明
+description: 根据git标签和提交记录生成发布说明
+version: "1.0.0"
+created_at: "2026-02-11T12:00:00"
+source: "改编自开源项目发布流程"
+triggers:
+  - "发布说明"
+  - "release notes"
+  - "changelog"
+  - "版本发布"
+steps:
+  - id: 1
+    name: 获取最新标签
+    action: run_command
+    params:
+      command: "git describe --tags --abbrev=0 2>nul || echo v0.0.0"
+      save_as: latest_tag
+      timeout: 5
+
+  - id: 2
+    name: 获取提交统计
+    action: run_command
+    params:
+      command: "git log --oneline -10 2>nul || echo 暂无提交记录"
+      save_as: recent_commits
+      timeout: 5
+
+  - id: 3
+    name: 生成发布说明
+    action: generate_document
+    params:
+      template: "release-notes.md"
+      variables:
+        version: "{{latest_tag}}"
+        date: "{{current_date}}"
+        commits: "{{recent_commits}}"
+      output: "docs/RELEASE-{{latest_tag}}.md"
+      save_as: release_path
+
+  - id: 4
+    name: 完成通知
+    action: notify
+    params:
+      message: "发布说明已生成: {{release_path}}"

@@ -1,0 +1,70 @@
+name: 邮件自动化处理
+version: "1.0.0"
+description: 自动分类邮件、提取关键信息、生成回复草稿
+created_at: "2026-02-11T15:55:00"
+source: "改编自n8n邮件自动化模板"
+category: "automation"
+tags: ["email", "automation", "classification", "productivity"]
+triggers:
+  - "处理邮件"
+  - "邮件分类"
+  - "自动回复"
+  - "email automation"
+steps:
+  - id: 1
+    name: 获取未读邮件
+    action: run_command
+    params:
+      command: "echo 获取未读邮件列表..."
+      save_as: unread_emails
+      timeout: 10
+
+  - id: 2
+    name: 分类邮件
+    action: run_command
+    params:
+      command: "echo 按类型分类邮件..."
+      save_as: classified_emails
+      timeout: 10
+
+  - id: 3
+    name: 提取关键信息
+    action: run_command
+    params:
+      command: "echo 提取重要信息和待办事项..."
+      save_as: key_info
+      timeout: 10
+
+  - id: 4
+    name: 生成回复草稿
+    action: run_command
+    params:
+      command: "echo 生成邮件回复草稿..."
+      save_as: reply_drafts
+      timeout: 15
+
+  - id: 5
+    name: 生成邮件摘要
+    action: generate_document
+    params:
+      template: "email-summary.md"
+      variables:
+        emails: "{{unread_emails}}"
+        classification: "{{classified_emails}}"
+        info: "{{key_info}}"
+        drafts: "{{reply_drafts}}"
+        date: "{{current_date}}"
+      output: "docs/email-summary-{{current_date}}.md"
+      save_as: summary_path
+
+  - id: 6
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        邮件处理完成！
+        未读邮件: {{unread_emails}}
+        分类结果: {{classified_emails}}
+        关键信息: {{key_info}}
+        回复草稿: {{reply_drafts}}
+        摘要报告: {{summary_path}}

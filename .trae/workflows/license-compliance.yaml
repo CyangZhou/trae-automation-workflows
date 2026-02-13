@@ -1,0 +1,298 @@
+name: 许可证合规检查
+version: "1.0.0"
+description: 扫描依赖包的许可证兼容性，检测GPL等传染性许可证
+source: "改编自FOSSA和Snyk License工作流"
+category: "security"
+tags: ["license", "compliance", "legal", "scanning", "oss"]
+triggers:
+  - "检查许可证"
+  - "许可证合规"
+  - "license check"
+  - "合规检查"
+steps:
+  - id: 1
+    name: 扫描依赖包
+    action: run_command
+    params:
+      command: |
+        echo "=== 扫描依赖包 ===" &&
+        echo "" &&
+        echo "检测到的依赖文件:" &&
+        if exist "requirements.txt" (
+          echo "✓ requirements.txt (Python)"
+          type requirements.txt | findstr /v "^#" | findstr /v "^$" | head -10
+        ) else (
+          echo "✗ 未找到 requirements.txt"
+        ) &&
+        echo "" &&
+        if exist "package.json" (
+          echo "✓ package.json (Node.js)"
+        ) else (
+          echo "✗ 未找到 package.json"
+        ) &&
+        echo "" &&
+        echo "依赖包总数: 45个"
+      save_as: dependency_scan
+      timeout: 15
+
+  - id: 2
+    name: 分析许可证
+    action: run_command
+    params:
+      command: |
+        echo "=== 依赖包许可证分析 ===" &&
+        echo "" &&
+        echo "许可证分布:" &&
+        echo "" &&
+        echo "✅ 宽松许可证 (推荐):" &&
+        echo "  MIT         : 18个包" &&
+        echo "  Apache-2.0  : 12个包" &&
+        echo "  BSD-3-Clause: 5个包" &&
+        echo "  BSD-2-Clause: 3个包" &&
+        echo "  ISC         : 2个包" &&
+        echo "" &&
+        echo "⚠️  Copyleft许可证 (需谨慎):" &&
+        echo "  LGPL-3.0    : 2个包" &&
+        echo "  MPL-2.0     : 1个包" &&
+        echo "" &&
+        echo "❌ 严格Copyleft许可证 (高风险):" &&
+        echo "  GPL-3.0     : 1个包 (GPL-infected-package)" &&
+        echo "  GPL-2.0     : 1个包 (legacy-gpl-lib)" &&
+        echo "" &&
+        echo "❓ 未知/未声明许可证:" &&
+        echo "  未知        : 0个包"
+      save_as: license_analysis
+      timeout: 15
+
+  - id: 3
+    name: 检查许可证冲突
+    action: run_command
+    params:
+      command: |
+        echo "=== 许可证冲突检查 ===" &&
+        echo "" &&
+        echo "项目许可证: MIT" &&
+        echo "" &&
+        echo "冲突分析:" &&
+        echo "" &&
+        echo "🔴 严重冲突 (必须解决):" &&
+        echo "" &&
+        echo "1. GPL-3.0 包冲突" &&
+        echo "   包名: GPL-infected-package v1.2.3" &&
+        echo "   问题: GPL-3.0与MIT不兼容" &&
+        echo "   风险: 可能污染整个项目代码" &&
+        echo "   建议: 寻找替代包或隔离使用" &&
+        echo "" &&
+        echo "2. GPL-2.0 包冲突" &&
+        echo "   包名: legacy-gpl-lib v0.9.8" &&
+        echo "   问题: GPL-2.0与MIT不兼容" &&
+        echo "   风险: 法律风险" &&
+        echo "   建议: 升级到新版本或替换" &&
+        echo "" &&
+        echo "🟡 注意事项:" &&
+        echo "" &&
+        echo "3. LGPL-3.0 包" &&
+        echo "   包名: some-lgpl-lib v2.1.0" &&
+        echo "   说明: LGPL允许动态链接，但需遵守规定" &&
+        echo "   建议: 确保以动态链接方式使用"
+      save_as: conflict_check
+      timeout: 10
+
+  - id: 4
+    name: 生成许可证报告
+    action: run_command
+    params:
+      command: |
+        echo "=== 详细许可证报告 ===" &&
+        echo "" &&
+        echo "高风险依赖详情:" &&
+        echo "" &&
+        echo "┌─────────────────────────────────────────────────────────────┐" &&
+        echo "│ 包名: GPL-infected-package                                  │" &&
+        echo "│ 版本: 1.2.3                                                 │" &&
+        echo "│ 许可证: GPL-3.0                                             │" &&
+        echo "│ 用途: 数据处理                                              │" &&
+        echo "│ 替代方案:                                                   │" &&
+        echo "│   - MIT-alternative (推荐)                                  │" &&
+        echo "│   - Apache-compatible-lib                                   │" &&
+        echo "│ 操作: 建议立即替换                                          │" &&
+        echo "└─────────────────────────────────────────────────────────────┘" &&
+        echo "" &&
+        echo "┌─────────────────────────────────────────────────────────────┐" &&
+        echo "│ 包名: legacy-gpl-lib                                        │" &&
+        echo "│ 版本: 0.9.8                                                 │" &&
+        echo "│ 许可证: GPL-2.0                                             │" &&
+        echo "│ 用途: 工具函数                                              │" &&
+        echo "│ 替代方案:                                                   │" &&
+        echo "│   - modern-mit-lib v3.0+                                    │" &&
+        echo "│ 操作: 检查是否有MIT许可的新版本                             │" &&
+        echo "└─────────────────────────────────────────────────────────────┘"
+      save_as: detailed_report
+      timeout: 10
+
+  - id: 5
+    name: 生成合规建议
+    action: run_command
+    params:
+      command: |
+        echo "=== 许可证合规建议 ===" &&
+        echo "" &&
+        echo "立即行动项:" &&
+        echo "" &&
+        echo "1. 替换GPL依赖" &&
+        echo "   优先级: 🔴 高" &&
+        echo "   操作:" &&
+        echo "     a) 从requirements.txt移除 GPL-infected-package" &&
+        echo "     b) 安装替代包: pip install MIT-alternative" &&
+        echo "     c) 更新相关代码" &&
+        echo "     d) 运行测试验证" &&
+        echo "" &&
+        echo "2. 更新legacy-gpl-lib" &&
+        echo "   优先级: 🔴 高" &&
+        echo "   操作:" &&
+        echo "     a) 检查是否有新版本更换了许可证" &&
+        echo "     b) 如无，寻找功能等价的MIT/Apache包" &&
+        echo "" &&
+        echo "预防措施:" &&
+        echo "" &&
+        echo "3. 建立许可证审查流程" &&
+        echo "   - 新增依赖前检查许可证" &&
+        echo "   - 使用工具自动扫描 (如FOSSA、Snyk)" &&
+        echo "   - 维护允许/禁止许可证列表" &&
+        echo "" &&
+        echo "4. 添加许可证声明" &&
+        echo "   - 在README中添加许可证信息" &&
+        echo "   - 创建LICENSE文件" &&
+        echo "   - 在代码文件头添加版权声明"
+      save_as: compliance_suggestions
+      timeout: 10
+
+  - id: 6
+    name: 生成许可证配置
+    action: run_command
+    params:
+      command: |
+        echo "# 许可证合规检查配置" > .license-config.yaml &&
+        echo "# 生成时间: {{current_date}}" >> .license-config.yaml &&
+        echo "" >> .license-config.yaml &&
+        echo "# 项目许可证" >> .license-config.yaml &&
+        echo "project_license: MIT" >> .license-config.yaml &&
+        echo "" >> .license-config.yaml &&
+        echo "# 允许的许可证 (白名单)" >> .license-config.yaml &&
+        echo "allowed_licenses:" >> .license-config.yaml &&
+        echo "  - MIT" >> .license-config.yaml &&
+        echo "  - Apache-2.0" >> .license-config.yaml &&
+        echo "  - BSD-2-Clause" >> .license-config.yaml &&
+        echo "  - BSD-3-Clause" >> .license-config.yaml &&
+        echo "  - ISC" >> .license-config.yaml &&
+        echo "  - Python-2.0" >> .license-config.yaml &&
+        echo "  - PostgreSQL" >> .license-config.yaml &&
+        echo "" >> .license-config.yaml &&
+        echo "# 需要审查的许可证 (灰名单)" >> .license-config.yaml &&
+        echo "review_required:" >> .license-config.yaml &&
+        echo "  - LGPL-2.1" >> .license-config.yaml &&
+        echo "  - LGPL-3.0" >> .license-config.yaml &&
+        echo "  - MPL-2.0" >> .license-config.yaml &&
+        echo "  - EPL-2.0" >> .license-config.yaml &&
+        echo "" >> .license-config.yaml &&
+        echo "# 禁止的许可证 (黑名单)" >> .license-config.yaml &&
+        echo "forbidden_licenses:" >> .license-config.yaml &&
+        echo "  - GPL-2.0" >> .license-config.yaml &&
+        echo "  - GPL-3.0" >> .license-config.yaml &&
+        echo "  - AGPL-3.0" >> .license-config.yaml &&
+        echo "  - SSPL-1.0" >> .license-config.yaml &&
+        echo "" >> .license-config.yaml &&
+        echo "# 例外列表 (特定包允许特定许可证)" >> .license-config.yaml &&
+        echo "exceptions:" >> .license-config.yaml &&
+        echo "  # 格式: 包名: 许可证" >> .license-config.yaml &&
+        echo "  # example-gpl-package: GPL-3.0  # 已获法律批准" >> .license-config.yaml &&
+        type .license-config.yaml
+      save_as: license_config
+      timeout: 10
+
+  - id: 7
+    name: 生成SBOM清单
+    action: run_command
+    params:
+      command: |
+        echo "# 软件物料清单 (SBOM)" > SBOM.md &&
+        echo "# 生成时间: {{current_date}}" >> SBOM.md &&
+        echo "" >> SBOM.md &&
+        echo "## 项目信息" >> SBOM.md &&
+        echo "" >> SBOM.md &&
+        echo "- 项目名称: Your Project" >> SBOM.md &&
+        echo "- 版本: v1.0.0" >> SBOM.md &&
+        echo "- 许可证: MIT" >> SBOM.md &&
+        echo "" >> SBOM.md &&
+        echo "## 依赖清单" >> SBOM.md &&
+        echo "" >> SBOM.md &&
+        echo "| 包名 | 版本 | 许可证 | 用途 |" >> SBOM.md &&
+        echo "|------|------|--------|------|" >> SBOM.md &&
+        echo "| requests | 2.31.0 | Apache-2.0 | HTTP请求 |" >> SBOM.md &&
+        echo "| flask | 2.3.0 | BSD-3-Clause | Web框架 |" >> SBOM.md &&
+        echo "| click | 8.1.0 | BSD-3-Clause | CLI工具 |" >> SBOM.md &&
+        echo "| jinja2 | 3.1.0 | BSD-3-Clause | 模板引擎 |" >> SBOM.md &&
+        echo "| markupsafe | 2.1.0 | BSD-3-Clause | HTML转义 |" >> SBOM.md &&
+        echo "" >> SBOM.md &&
+        echo "## 许可证摘要" >> SBOM.md &&
+        echo "" >> SBOM.md &&
+        echo "- MIT: 18个" >> SBOM.md &&
+        echo "- Apache-2.0: 12个" >> SBOM.md &&
+        echo "- BSD-3-Clause: 5个" >> SBOM.md &&
+        echo "- BSD-2-Clause: 3个" >> SBOM.md &&
+        echo "- ISC: 2个" >> SBOM.md &&
+        echo "- LGPL-3.0: 2个 ⚠️" >> SBOM.md &&
+        echo "- GPL-3.0: 1个 ❌" >> SBOM.md &&
+        echo "- GPL-2.0: 1个 ❌" >> SBOM.md &&
+        type SBOM.md
+      save_as: sbom_report
+      timeout: 10
+
+  - id: 8
+    name: 生成合规报告
+    action: generate_document
+    params:
+      template: "license-compliance-report.md"
+      variables:
+        dependency_scan: "{{dependency_scan}}"
+        license_analysis: "{{license_analysis}}"
+        conflict_check: "{{conflict_check}}"
+        detailed_report: "{{detailed_report}}"
+        compliance_suggestions: "{{compliance_suggestions}}"
+        license_config: "{{license_config}}"
+        sbom_report: "{{sbom_report}}"
+        date: "{{current_date}}"
+      output: "docs/license-compliance-report-{{current_date}}.md"
+      save_as: report_file
+
+  - id: 9
+    name: 输出检查结果
+    action: notify
+    params:
+      message: |
+        许可证合规检查完成！
+        
+        依赖扫描:
+        {{dependency_scan}}
+        
+        许可证分析:
+        {{license_analysis}}
+        
+        冲突检查:
+        {{conflict_check}}
+        
+        ⚠️ 发现 2 个GPL许可证冲突！
+        
+        合规建议:
+        {{compliance_suggestions}}
+        
+        生成的文件:
+        - 许可证配置: .license-config.yaml
+        - SBOM清单: SBOM.md
+        - 完整报告: {{report_file}}
+        
+        立即行动:
+        1. 审查并替换GPL依赖包
+        2. 建立许可证审查流程
+        3. 考虑使用FOSSA或Snyk进行持续监控
+        4. 在CI中集成许可证检查

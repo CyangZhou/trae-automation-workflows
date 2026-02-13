@@ -1,0 +1,67 @@
+name: 财务发票自动处理
+version: "1.0.0"
+description: OCR识别、数据提取、审批流程和自动记账
+created_at: "2026-02-11T14:35:00"
+source: "改编自sim工作流模板库"
+category: "automation"
+tags: ["finance", "invoice", "ocr", "automation", "accounting"]
+triggers:
+  - "处理发票"
+  - "发票自动化"
+  - "财务流程"
+  - "invoice processing"
+steps:
+  - id: 1
+    name: 获取发票附件
+    action: run_command
+    params:
+      command: "echo 获取邮件中的发票附件..."
+      save_as: invoice_attachments
+      timeout: 5
+
+  - id: 2
+    name: OCR识别
+    action: run_command
+    params:
+      command: "echo 使用OCR识别发票内容..."
+      save_as: ocr_result
+      timeout: 15
+
+  - id: 3
+    name: 提取关键数据
+    action: run_command
+    params:
+      command: "echo 提取金额、日期、供应商等关键信息..."
+      save_as: invoice_data
+      timeout: 10
+
+  - id: 4
+    name: 数据验证
+    action: run_command
+    params:
+      command: "echo 验证发票数据的完整性和准确性..."
+      save_as: validation_result
+      timeout: 5
+
+  - id: 5
+    name: 生成处理记录
+    action: generate_document
+    params:
+      template: "invoice-record.md"
+      variables:
+        ocr: "{{ocr_result}}"
+        data: "{{invoice_data}}"
+        validation: "{{validation_result}}"
+        date: "{{current_date}}"
+      output: "docs/invoice-record-{{current_date}}.md"
+      save_as: invoice_record
+
+  - id: 6
+    name: 输出处理结果
+    action: notify
+    params:
+      message: |
+        发票处理完成！
+        提取数据: {{invoice_data}}
+        验证结果: {{validation_result}}
+        处理记录: {{invoice_record}}

@@ -1,0 +1,84 @@
+name: Python本地CI检查
+version: "1.0.0"
+description: 本地运行Python代码质量检查（pytest、flake8、mypy）
+created_at: "2026-02-11"
+category: code-quality
+tags: ["python", "ci", "testing", "lint", "type-check"]
+triggers:
+  - "运行Python检查"
+  - "python ci"
+  - "代码检查"
+  - "运行测试"
+steps:
+  - id: 1
+    name: 检查Python环境
+    action: run_command
+    params:
+      command: "python --version && pip --version"
+      save_as: python_version
+      timeout: 10
+
+  - id: 2
+    name: 安装依赖
+    action: run_command
+    params:
+      command: "pip install -r requirements.txt -q 2>nul || echo 未找到requirements.txt，跳过依赖安装"
+      save_as: install_result
+      timeout: 60
+
+  - id: 3
+    name: 运行Flake8代码风格检查
+    action: run_command
+    params:
+      command: "python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics 2>nul || echo flake8未安装，运行: pip install flake8"
+      save_as: flake8_result
+      timeout: 30
+
+  - id: 4
+    name: 运行Pytest测试
+    action: run_command
+    params:
+      command: "python -m pytest --tb=short -q 2>nul || echo pytest未安装或未找到测试，运行: pip install pytest"
+      save_as: pytest_result
+      timeout: 60
+
+  - id: 5
+    name: 运行MyPy类型检查
+    action: run_command
+    params:
+      command: "python -m mypy . --ignore-missing-imports 2>nul || echo mypy未安装，运行: pip install mypy"
+      save_as: mypy_result
+      timeout: 30
+
+  - id: 6
+    name: 生成检查报告
+    action: generate_document
+    params:
+      template: "ci-report.md"
+      variables:
+        python_version: "{{python_version}}"
+        flake8_result: "{{flake8_result}}"
+        pytest_result: "{{pytest_result}}"
+        mypy_result: "{{mypy_result}}"
+        date: "{{current_date}}"
+      output: "docs/python-ci-report-{{current_date}}.md"
+      save_as: report_file
+
+  - id: 7
+    name: 输出检查结果
+    action: notify
+    params:
+      message: |
+        Python CI检查完成！
+        Python版本: {{python_version}}
+        
+        Flake8检查结果:
+        {{flake8_result}}
+        
+        Pytest测试结果:
+        {{pytest_result}}
+        
+        MyPy类型检查结果:
+        {{mypy_result}}
+        
+        完整报告: {{report_file}}

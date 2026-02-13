@@ -1,0 +1,26 @@
+name: 创建项目README
+description: 自动创建项目README文档模板
+version: "1.0.0"
+created_at: "2026-02-11T11:30:00"
+triggers:
+  - "创建README"
+  - "readme"
+  - "项目文档"
+steps:
+  - id: 1
+    name: 生成README文档
+    action: generate_document
+    params:
+      template: "readme-template.md"
+      variables:
+        project_name: "AI助手研发项目"
+        date: "{{current_date}}"
+        description: "基于Trae的AI助手开发"
+      output: "README.md"
+      save_as: output_file
+
+  - id: 2
+    name: 完成通知
+    action: notify
+    params:
+      message: "README文档已生成: {{output_file}}"

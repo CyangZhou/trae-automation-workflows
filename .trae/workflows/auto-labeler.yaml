@@ -1,0 +1,129 @@
+name: 自动文件分类标签
+version: "1.0.0"
+description: 根据文件路径和内容自动为项目文件添加分类标签
+created_at: "2026-02-11"
+category: project-mgmt
+tags: ["label", "classification", "automation", "file-management"]
+triggers:
+  - "自动分类"
+  - "添加标签"
+  - "文件分类"
+  - "auto label"
+steps:
+  - id: 1
+    name: 扫描项目结构
+    action: run_command
+    params:
+      command: |
+        echo "=== 项目文件统计 ===" &&
+        echo "Python文件: " && dir /s /b *.py 2>nul | find /c ".py" &&
+        echo "JavaScript文件: " && dir /s /b *.js *.ts *.jsx *.tsx 2>nul | find /c "." &&
+        echo "文档文件: " && dir /s /b *.md *.txt *.rst 2>nul | find /c "." &&
+        echo "配置文件: " && dir /s /b *.json *.yaml *.yml *.toml *.ini 2>nul | find /c "." &&
+        echo "测试文件: " && dir /s /b *test*.py *spec*.js 2>nul | find /c "."
+      save_as: file_stats
+      timeout: 15
+
+  - id: 2
+    name: 分析核心模块
+    action: run_command
+    params:
+      command: |
+        echo "=== 核心代码目录 ===" &&
+        dir src\*.py lib\*.py app\*.py 2>nul | findstr ".py" &&
+        echo "=== 测试目录 ===" &&
+        dir tests\*.py test\*.py 2>nul | findstr ".py"
+      save_as: core_modules
+      timeout: 10
+
+  - id: 3
+    name: 检测技术栈
+    action: run_command
+    params:
+      command: |
+        echo "=== 技术栈检测 ===" &&
+        if exist "requirements.txt" echo "Python项目 (requirements.txt)" &&
+        if exist "package.json" echo "Node.js项目 (package.json)" &&
+        if exist "Cargo.toml" echo "Rust项目 (Cargo.toml)" &&
+        if exist "pom.xml" echo "Java/Maven项目 (pom.xml)" &&
+        if exist "go.mod" echo "Go项目 (go.mod)" &&
+        if exist "Dockerfile" echo "容器化项目 (Dockerfile)" &&
+        if exist ".github\workflows" echo "CI/CD项目 (GitHub Actions)"
+      save_as: tech_stack
+      timeout: 10
+
+  - id: 4
+    name: 生成标签建议
+    action: run_command
+    params:
+      command: |
+        echo "=== 建议标签 ===" &&
+        echo "基于项目结构分析，建议添加以下标签:" &&
+        echo "" &&
+        if exist "tests" echo "🏷️ has-tests (包含测试)" &&
+        if exist "docs" echo "🏷️ has-docs (包含文档)" &&
+        if exist ".github" echo "🏷️ has-ci (包含CI/CD)" &&
+        if exist "Dockerfile" echo "🏷️ containerized (容器化)" &&
+        if exist "README.md" echo "🏷️ documented (已文档化)" &&
+        dir *.py 2>nul && echo "🏷️ python (Python项目)" ||
+        dir *.js 2>nul && echo "🏷️ javascript (JavaScript项目)"
+      save_as: label_suggestions
+      timeout: 10
+
+  - id: 5
+    name: 创建标签配置文件
+    action: run_command
+    params:
+      command: |
+        echo "# 项目自动分类标签" > .project-labels.yaml &&
+        echo "# 生成时间: {{current_date}}" >> .project-labels.yaml &&
+        echo "" >> .project-labels.yaml &&
+        echo "labels:" >> .project-labels.yaml &&
+        echo "  - name: auto-detected" >> .project-labels.yaml &&
+        echo "    color: blue" >> .project-labels.yaml &&
+        echo "    description: 自动检测的标签" >> .project-labels.yaml &&
+        echo "" >> .project-labels.yaml &&
+        echo "classifications:" >> .project-labels.yaml &&
+        echo "  {{label_suggestions}}" >> .project-labels.yaml &&
+        echo "" >> .project-labels.yaml &&
+        echo "file_patterns:" >> .project-labels.yaml &&
+        echo "  src/*.py: core" >> .project-labels.yaml &&
+        echo "  tests/*.py: test" >> .project-labels.yaml &&
+        echo "  docs/*.md: documentation" >> .project-labels.yaml &&
+        type .project-labels.yaml
+      save_as: label_config
+      timeout: 10
+
+  - id: 6
+    name: 生成分类报告
+    action: generate_document
+    params:
+      template: "label-report.md"
+      variables:
+        file_stats: "{{file_stats}}"
+        core_modules: "{{core_modules}}"
+        tech_stack: "{{tech_stack}}"
+        label_suggestions: "{{label_suggestions}}"
+        label_config: "{{label_config}}"
+        date: "{{current_date}}"
+      output: "docs/auto-labels-{{current_date}}.md"
+      save_as: report_file
+
+  - id: 7
+    name: 输出分类结果
+    action: notify
+    params:
+      message: |
+        文件自动分类完成！
+        
+        项目统计:
+        {{file_stats}}
+        
+        技术栈:
+        {{tech_stack}}
+        
+        标签建议:
+        {{label_suggestions}}
+        
+        配置文件已创建: .project-labels.yaml
+        完整报告: {{report_file}}

@@ -1,0 +1,42 @@
+name: 会议纪要生成
+description: 根据会议主题和讨论内容生成结构化会议纪要
+version: "1.0.0"
+created_at: "2026-02-11T12:00:00"
+source: "改编自团队协作最佳实践"
+triggers:
+  - "会议纪要"
+  - "meeting minutes"
+  - "会议记录"
+  - "meeting"
+steps:
+  - id: 1
+    name: 获取当前时间
+    action: run_command
+    params:
+      command: "powershell -Command \"(Get-Date).ToString('HH:mm')\""
+      save_as: meeting_time
+      timeout: 5
+
+  - id: 2
+    name: 生成会议纪要模板
+    action: generate_document
+    params:
+      template: "meeting-minutes.md"
+      variables:
+        date: "{{current_date}}"
+        time: "{{meeting_time}}"
+        topic: "待填写会议主题"
+      output: "docs/meeting-{{current_date}}.md"
+      save_as: minutes_path
+
+  - id: 3
+    name: 打开文档
+    action: open_file
+    params:
+      path: "{{minutes_path}}"
+
+  - id: 4
+    name: 完成通知
+    action: notify
+    params:
+      message: "会议纪要模板已生成并打开: {{minutes_path}}"

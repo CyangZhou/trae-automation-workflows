@@ -1,0 +1,24 @@
+name: 创建一个简单的HTML页面
+description: '自动生成: 创建一个简单的HTML页面'
+version: 1.0.0
+source: auto_generated
+created_at: '2026-02-12T19:27:48.245283'
+trigger:
+  type: auto
+  keywords:
+  - 创建一个简单的html页面
+steps:
+- tool: file_write
+  params:
+    path: module.py
+    content: "# 新模块\n\ndef hello():\n    return 'Hello, World!'\n"
+  desc: 创建模块文件
+  id: 1
+  status: pending
+- tool: command
+  params:
+    command: python -c "import module; print(module.hello())"
+    timeout: 10
+  desc: 验证模块可导入
+  id: 2
+  status: pending

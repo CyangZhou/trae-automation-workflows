@@ -1,0 +1,109 @@
+name: 项目统计
+description: 统计项目代码量、文件数等信息
+version: "2.0.0"
+created_at: "2026-02-11T11:00:00"
+triggers:
+  - "统计项目"
+  - "project stats"
+  - "代码统计"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 统计Python代码行数
+    action: run_command
+    params:
+      command: "python -c \"import os; lines=0; files=0; [[(lines:=lines+len(open(os.path.join(r,f),errors='ignore').readlines()), files:=files+1) for f in fs if f.endswith('.py') and 'venv' not in r and '__pycache__' not in r] for r,d,fs in os.walk('.')]; print(f'Python代码: {lines}行, {files}个文件')\""
+      save_as: python_stats
+      timeout: 30
+
+  - id: 3
+    name: 统计JavaScript/TypeScript代码
+    action: run_command
+    params:
+      command: "python -c \"import os; lines=0; files=0; [[(lines:=lines+len(open(os.path.join(r,f),errors='ignore').readlines()), files:=files+1) for f in fs if f.endswith(('.js','.ts','.jsx','.tsx')) and 'node_modules' not in r] for r,d,fs in os.walk('.')]; print(f'JS/TS代码: {lines}行, {files}个文件')\""
+      save_as: js_stats
+      timeout: 30
+
+  - id: 4
+    name: 统计配置文件
+    action: run_command
+    params:
+      command: "python -c \"import os; files=[os.path.join(r,f) for r,d,fs in os.walk('.') for f in fs if f.endswith(('.yaml','.yml','.json','.toml','.ini')) and 'venv' not in r and 'node_modules' not in r]; print(f'配置文件: {len(files)}个')\""
+      save_as: config_stats
+      timeout: 15
+
+  - id: 5
+    name: 统计文档文件
+    action: run_command
+    params:
+      command: "python -c \"import os; files=[os.path.join(r,f) for r,d,fs in os.walk('.') for f in fs if f.endswith(('.md','.rst','.txt')) and 'venv' not in r and 'node_modules' not in r]; print(f'文档文件: {len(files)}个')\""
+      save_as: doc_stats
+      timeout: 15
+
+  - id: 6
+    name: 统计目录结构
+    action: run_command
+    params:
+      command: "python -c \"import os; dirs=[r for r,d,f in os.walk('.') if 'venv' not in r and 'node_modules' not in r and '.git' not in r and '__pycache__' not in r]; print(f'目录数: {len(dirs)}个')\""
+      save_as: dir_stats
+      timeout: 15
+
+  - id: 7
+    name: 生成统计报告
+    action: generate_document
+    params:
+      output: "output/project-stats-{{current_date}}.md"
+      content: |
+        # 项目统计报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 代码统计
+        
+        {{python_stats}}
+        {{js_stats}}
+        
+        ## 文件统计
+        
+        {{config_stats}}
+        {{doc_stats}}
+        {{dir_stats}}
+        
+        ## 目录结构
+        
+        ```
+        项目根目录/
+        ├── .trae/          # Trae配置
+        ├── output/         # 输出文件
+        ├── tests/          # 测试文件
+        └── ...
+        ```
+
+  - id: 8
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/project-stats-{{current_date}}.md"
+    fail_message: "统计报告未生成"
+
+  - id: 9
+    name: 显示统计结果
+    action: notify
+    params:
+      message: |
+        ✅ 项目统计完成！
+        
+        {{python_stats}}
+        {{js_stats}}
+        {{config_stats}}
+        {{doc_stats}}
+        {{dir_stats}}
+        
+        报告: output/project-stats-{{current_date}}.md

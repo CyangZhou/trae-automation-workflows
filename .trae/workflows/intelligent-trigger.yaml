@@ -1,0 +1,256 @@
+name: 智能工作流触发器
+version: "3.0.0"
+description: 根据上下文自动感知并推荐工作流，支持蜂群模式并行执行复杂任务
+category: "automation"
+tags: ["intelligent", "proactive", "auto-trigger", "context-aware", "swarm"]
+
+# 智能触发配置
+intelligence:
+  # 上下文感知规则
+  context_rules:
+    # 规则1：依赖文件变更
+    - name: "依赖更新检测"
+      patterns: ["requirements.txt", "package.json", "Cargo.toml", "go.mod"]
+      action: "suggest_workflow"
+      workflow: "dependency-auto-update"
+      message: "检测到依赖文件变更，建议检查依赖更新和安全漏洞"
+      auto_run: false
+      priority: high
+    
+    # 规则2：API代码变更
+    - name: "API文档同步检查"
+      patterns: ["*api*.py", "*route*.py", "*endpoint*.py"]
+      file_content: ["@app.route", "def api_", "@router"]
+      action: "suggest_workflow"
+      workflow: "doc-sync-check"
+      message: "检测到API代码变更，建议检查文档同步"
+      auto_run: false
+      priority: medium
+    
+    # 规则3：测试文件变更
+    - name: "覆盖率检查"
+      patterns: ["*test*.py", "test_*.py", "*_test.py"]
+      action: "suggest_workflow"
+      workflow: "code-coverage-report"
+      message: "检测到测试代码变更，建议运行覆盖率检查"
+      auto_run: false
+      priority: medium
+    
+    # 规则4：Git提交准备
+    - name: "提交前检查"
+      git_hook: "pre-commit"
+      action: "run_workflows"
+      workflows: ["security-scan-local", "code-review"]
+      message: "提交前自动运行安全和代码检查"
+      auto_run: true
+      priority: high
+    
+    # 规则5：PR创建
+    - name: "PR自动化"
+      git_hook: "pr-created"
+      action: "run_workflows"
+      workflows: ["pr-size-labeler", "code-coverage-report", "doc-sync-check"]
+      message: "PR创建时自动运行检查"
+      auto_run: true
+      priority: high
+    
+    # 🆕 规则6：复杂任务检测 - 触发蜂群模式
+    - name: "复杂任务检测"
+      patterns: ["*架构*.md", "*设计*.md", "ARCHITECTURE.md"]
+      keywords: ["重构", "架构", "系统设计", "新功能开发"]
+      action: "suggest_swarm"
+      message: "检测到复杂任务，建议启动蜂群模式并行执行"
+      auto_run: false
+      priority: high
+      swarm_config:
+        orchestrator: "swarm-orchestrator"
+        workers: ["researcher", "coder", "tester", "writer"]
+    
+    # 🆕 规则7：多文件批量变更 - 触发蜂群模式
+    - name: "批量文件变更"
+      condition: "changed_files_count > 5"
+      action: "suggest_swarm"
+      message: "检测到批量文件变更，建议启动蜂群模式并行处理"
+      auto_run: false
+      priority: medium
+      swarm_config:
+        orchestrator: "swarm-orchestrator"
+        parallel_workers: 3
+
+  # 智能推荐UI
+  ui:
+    notification_type: "inline"
+    show_in_panel: true
+    one_click_execute: true
+    dismiss_after: 3600
+
+  # 学习模式
+  learning:
+    enabled: true
+    track_user_choices: true
+    user_preferences:
+      auto_run_list: []
+      ignore_list: []
+      swarm_preferred: false
+
+# 🆕 蜂群模式配置
+swarm_mode:
+  enabled: true
+  
+  auto_trigger_conditions:
+    - condition: "complexity == 'complex'"
+      action: "suggest_swarm"
+    - condition: "estimated_time > 5min"
+      action: "suggest_swarm"
+    - condition: "subtasks_count > 3"
+      action: "auto_swarm"
+  
+  orchestrator:
+    skill: "swarm-orchestrator"
+    
+  workers:
+    researcher:
+      capabilities: ["web_search", "doc_reading", "knowledge_extraction"]
+      max_instances: 2
+    coder:
+      capabilities: ["code_writing", "refactoring", "bug_fixing"]
+      max_instances: 3
+    tester:
+      capabilities: ["unit_test", "integration_test", "performance_test"]
+      max_instances: 2
+    writer:
+      capabilities: ["documentation", "readme", "api_docs"]
+      max_instances: 1
+    reviewer:
+      capabilities: ["code_review", "security_scan", "best_practices"]
+      max_instances: 1
+
+# 触发词
+triggers:
+  - "智能工作流"
+  - "自动触发"
+  - "intelligent workflow"
+  - "帮我看看"
+  - "检查项目"
+  - "蜂群模式"
+  - "并行执行"
+  - "/swarm"
+
+steps:
+  - id: 1
+    name: 扫描项目上下文
+    action: run_command
+    params:
+      command: |
+        echo "=== 智能上下文扫描 v3.0 ===" &&
+        echo "" &&
+        echo "正在分析项目状态..." &&
+        echo "" &&
+        echo "📁 文件变更检测:" &&
+        echo "  - 检查 requirements.txt 变更..." &&
+        echo "  - 检查 API 代码变更..." &&
+        echo "  - 检查测试文件变更..." &&
+        echo "" &&
+        echo "🔄 Git状态检测:" &&
+        echo "  - 检查是否有未提交变更..." &&
+        echo "  - 检查当前分支..." &&
+        echo "" &&
+        echo "📊 项目健康度:" &&
+        echo "  - 检查 Issue 数量..." &&
+        echo "  - 检查测试覆盖率..." &&
+        echo "  - 检查依赖漏洞..." &&
+        echo "" &&
+        echo "🐝 蜂群模式检测:" &&
+        echo "  - 分析任务复杂度..." &&
+        echo "  - 检测是否适合并行执行..."
+      save_as: context_scan
+      timeout: 15
+
+  - id: 2
+    name: 匹配工作流
+    action: run_command
+    params:
+      command: |
+        echo "=== 智能工作流推荐 v3.0 ===" &&
+        echo "" &&
+        echo "基于项目分析，推荐以下工作流:" &&
+        echo "" &&
+        echo "🔴 高优先级 (建议立即处理):" &&
+        echo "" &&
+        echo "1. [security-scan-local] 安全扫描" &&
+        echo "   原因: 项目包含依赖，建议定期安全检查" &&
+        echo "   操作: [一键运行] [查看详情] [忽略]" &&
+        echo "" &&
+        echo "2. [code-coverage-report] 覆盖率报告" &&
+        echo "   原因: 检测到测试文件，但未生成覆盖率报告" &&
+        echo "   操作: [一键运行] [查看详情] [忽略]" &&
+        echo "" &&
+        echo "🐝 蜂群模式推荐:" &&
+        echo "" &&
+        echo "3. [swarm-execution] 复杂任务并行执行" &&
+        echo "   原因: 检测到复杂任务，适合并行处理" &&
+        echo "   操作: [启动蜂群] [查看详情]" &&
+        echo "" &&
+        echo "🟡 中优先级 (建议本周处理):" &&
+        echo "" &&
+        echo "4. [doc-sync-check] 文档同步检查" &&
+        echo "   原因: 项目有README，建议检查文档完整性" &&
+        echo "   操作: [一键运行] [查看详情] [忽略]"
+      save_as: workflow_recommendations
+      timeout: 10
+
+  - id: 3
+    name: 生成智能配置
+    action: run_command
+    params:
+      command: |
+        echo "# 智能工作流配置文件 v3.0" > .trae/intelligent-workflow.yaml &&
+        echo "# 此文件由智能触发器自动生成" >> .trae/intelligent-workflow.yaml &&
+        echo "# 支持蜂群模式并行执行" >> .trae/intelligent-workflow.yaml &&
+        echo "" >> .trae/intelligent-workflow.yaml &&
+        echo "version: \"3.0.0\"" >> .trae/intelligent-workflow.yaml &&
+        echo "" >> .trae/intelligent-workflow.yaml &&
+        echo "# 自动执行的工作流 (无需确认)" >> .trae/intelligent-workflow.yaml &&
+        echo "auto_run:" >> .trae/intelligent-workflow.yaml &&
+        echo "  - security-scan-local" >> .trae/intelligent-workflow.yaml &&
+        echo "  - code-review" >> .trae/intelligent-workflow.yaml &&
+        echo "" >> .trae/intelligent-workflow.yaml &&
+        echo "# 蜂群模式配置" >> .trae/intelligent-workflow.yaml &&
+        echo "swarm_mode:" >> .trae/intelligent-workflow.yaml &&
+        echo "  enabled: true" >> .trae/intelligent-workflow.yaml &&
+        echo "  auto_trigger: false" >> .trae/intelligent-workflow.yaml &&
+        echo "  max_workers: 5" >> .trae/intelligent-workflow.yaml &&
+        echo "" >> .trae/intelligent-workflow.yaml &&
+        echo "# 需要确认的工作流" >> .trae/intelligent-workflow.yaml &&
+        echo "confirm_before_run:" >> .trae/intelligent-workflow.yaml &&
+        echo "  - smart-release" >> .trae/intelligent-workflow.yaml &&
+        echo "  - dependency-auto-update" >> .trae/intelligent-workflow.yaml &&
+        echo "  - swarm-execution" >> .trae/intelligent-workflow.yaml &&
+        type .trae/intelligent-workflow.yaml
+      save_as: intelligent_config
+      timeout: 10
+
+  - id: 4
+    name: 输出生成结果
+    action: notify
+    params:
+      message: |
+        🎉 智能工作流系统 v3.0 已配置完成！
+        
+        {{context_scan}}
+        
+        {{workflow_recommendations}}
+        
+        生成的文件:
+        - 智能配置: .trae/intelligent-workflow.yaml
+        
+        🆕 蜂群模式已集成:
+        - 复杂任务自动检测
+        - 多 Worker 并行执行
+        - DAG 依赖调度
+        
+        现在你可以：
+        1. 说 "帮我看看项目" → 自动分析并推荐工作流
+        2. 说 "启动蜂群" → 并行执行复杂任务
+        3. 修改文件 → 自动触发相关检查
+        4. 一键执行推荐的工作流

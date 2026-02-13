@@ -1,0 +1,161 @@
+name: Issue 自动管理
+version: "2.0.0"
+description: 自动标记长期未响应的Issue和PR，清理无效问题
+source: "改编自GitHub Actions stale工作流"
+category: "project-mgmt"
+tags: ["issue", "stale", "cleanup", "automation", "maintenance"]
+triggers:
+  - "清理Issue"
+  - "管理Stale"
+  - "issue管理"
+  - "stale管理"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查Git仓库
+    action: run_command
+    params:
+      command: "git rev-parse --git-dir 2>nul && echo Git仓库存在 || echo 非Git仓库"
+      save_as: git_check
+      timeout: 5
+
+  - id: 3
+    name: 获取最近提交统计
+    action: run_command
+    params:
+      command: "git log --since='30 days ago' --oneline 2>nul | python -c \"import sys; lines=sys.stdin.readlines(); print(f'最近30天提交: {len(lines)}次')\" || echo 无提交历史"
+      save_as: recent_commits
+      timeout: 10
+
+  - id: 4
+    name: 获取贡献者统计
+    action: run_command
+    params:
+      command: "git shortlog -sn --since='30 days ago' 2>nul | head -10 || echo 无贡献者数据"
+      save_as: contributors
+      timeout: 10
+
+  - id: 5
+    name: 获取开放分支
+    action: run_command
+    params:
+      command: "git branch -a 2>nul | python -c \"import sys; branches=[l.strip() for l in sys.stdin if l.strip() and 'HEAD' not in l]; print(f'分支数: {len(branches)}'); [print(f'  {b}') for b in branches[:10]]\" || echo 无分支信息"
+      save_as: branches
+      timeout: 10
+
+  - id: 6
+    name: 生成Stale配置
+    action: run_command
+    params:
+      command: |
+        python -c "
+        config = '''# Issue Stale 管理配置
+stale:
+  daysUntilStale: 30
+  daysUntilClose: 7
+  exemptLabels:
+    - pinned
+    - security
+    - bug
+  staleLabel: stale
+
+messages:
+  issueComment: |
+    此Issue已超过30天无活动，被标记为stale。
+    如问题仍存在请评论，7天内无响应将自动关闭。
+  prComment: |
+    此PR已超过30天无活动，被标记为stale。
+    如仍在处理请评论更新进度，7天内无响应将自动关闭。
+'''
+        with open('output/issue-stale-config.yaml', 'w') as f:
+            f.write(config)
+        print('配置文件已生成')
+        "
+
+  - id: 7
+    name: 验证配置文件
+    action: verify
+    type: file_exists
+    path: "output/issue-stale-config.yaml"
+    fail_message: "配置文件未生成"
+
+  - id: 8
+    name: 生成管理报告
+    action: generate_document
+    params:
+      output: "output/issue-stale-report-{{current_date}}.md"
+      content: |
+        # Issue Stale 管理报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 仓库状态
+        
+        {{git_check}}
+        
+        ## 最近活动
+        
+        {{recent_commits}}
+        
+        ## 贡献者
+        
+        {{contributors}}
+        
+        ## 分支状态
+        
+        {{branches}}
+        
+        ## Stale规则
+        
+        - 30天无活动 → 标记stale
+        - 7天无响应 → 自动关闭
+        - 豁免标签: pinned, security, bug
+        
+        ## 配置文件
+        
+        已生成: output/issue-stale-config.yaml
+        
+        ## 启用自动化
+        
+        ```yaml
+        # .github/workflows/stale.yml
+        name: Mark stale issues
+        on:
+          schedule:
+            - cron: '0 0 * * *'
+        jobs:
+          stale:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: actions/stale@v8
+        ```
+
+  - id: 9
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/issue-stale-report-{{current_date}}.md"
+    fail_message: "报告未生成"
+
+  - id: 10
+    name: 输出管理结果
+    action: notify
+    params:
+      message: |
+        ✅ Issue Stale 管理检查完成！
+        
+        仓库状态:
+        {{git_check}}
+        
+        最近活动:
+        {{recent_commits}}
+        
+        报告: output/issue-stale-report-{{current_date}}.md
+        配置: output/issue-stale-config.yaml

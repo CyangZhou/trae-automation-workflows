@@ -1,0 +1,70 @@
+name: YouTube竞品调研
+version: "1.0.0"
+description: 自动化YouTube频道调研，生成包含热门视频、播放量和运营洞察的报告
+created_at: "2026-02-11T15:30:00"
+source: "改编自Claude Code自动化指南"
+category: "automation"
+tags: ["youtube", "research", "competitor-analysis", "automation", "marketing"]
+triggers:
+  - "youtube调研"
+  - "竞品分析"
+  - "频道调研"
+  - "youtube research"
+steps:
+  - id: 1
+    name: 获取频道信息
+    action: run_command
+    params:
+      command: "echo 获取YouTube频道数据..."
+      save_as: channel_info
+      timeout: 10
+
+  - id: 2
+    name: 分析热门视频
+    action: run_command
+    params:
+      command: "echo 分析前10个热门视频..."
+      save_as: top_videos
+      timeout: 15
+
+  - id: 3
+    name: 提取关键指标
+    action: run_command
+    params:
+      command: "echo 提取播放量、时长、互动数据..."
+      save_as: metrics
+      timeout: 10
+
+  - id: 4
+    name: 生成运营洞察
+    action: run_command
+    params:
+      command: "echo 分析发布频率、内容策略..."
+      save_as: insights
+      timeout: 10
+
+  - id: 5
+    name: 生成调研报告
+    action: generate_document
+    params:
+      template: "youtube-research.md"
+      variables:
+        channel: "{{channel_info}}"
+        videos: "{{top_videos}}"
+        metrics: "{{metrics}}"
+        insights: "{{insights}}"
+        date: "{{current_date}}"
+      output: "docs/youtube-research-{{current_date}}.md"
+      save_as: report_path
+
+  - id: 6
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        YouTube竞品调研完成！
+        频道信息: {{channel_info}}
+        热门视频: {{top_videos}}
+        关键指标: {{metrics}}
+        运营洞察: {{insights}}
+        报告路径: {{report_path}}

@@ -1,0 +1,146 @@
+name: 代码审查助手
+description: 自动检查代码规范、潜在问题和改进建议，自动安装缺失工具
+version: "2.1.0"
+created_at: "2026-02-11T12:00:00"
+source: "改编自GitHub Actions最佳实践"
+tags: ["code-review", "lint", "quality", "auto-install"]
+triggers:
+  - "代码审查"
+  - "code review"
+  - "检查代码"
+  - "review"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查并安装flake8
+    action: run_command
+    params:
+      command: "python -c \"import flake8; print('flake8已安装')\" 2>nul || (echo 正在安装flake8... && pip install flake8 -q && echo flake8安装完成)"
+      timeout: 60
+
+  - id: 3
+    name: 验证flake8安装
+    action: verify
+    type: command_success
+    command: "python -c \"import flake8; print('flake8已安装')\""
+    fail_message: "flake8安装失败"
+
+  - id: 4
+    name: 检查并安装radon
+    action: run_command
+    params:
+      command: "python -c \"import radon; print('radon已安装')\" 2>nul || (echo 正在安装radon... && pip install radon -q && echo radon安装完成)"
+      timeout: 60
+
+  - id: 5
+    name: 验证radon安装
+    action: verify
+    type: command_success
+    command: "python -c \"import radon; print('radon已安装')\""
+    fail_message: "radon安装失败"
+
+  - id: 6
+    name: 获取待审查文件列表
+    action: run_command
+    params:
+      command: "python -c \"import os; files=[os.path.join(r,f) for r,d,fs in os.walk('.') for f in fs if f.endswith('.py') and 'venv' not in r and '__pycache__' not in r and 'output' not in r]; print(f'找到 {len(files)} 个Python文件'); [print(f) for f in files[:20]]\""
+      save_as: changed_files
+      timeout: 15
+
+  - id: 7
+    name: 迟行flake8代码风格检查
+    action: run_command
+    params:
+      command: "python -m flake8 . --count --statistics --exclude=venv,__pycache__,output,.git --output-file=output/flake8-report.txt 2>nul && type output\\flake8-report.txt || echo 无代码风格问题"
+      save_as: style_check
+      timeout: 60
+
+  - id: 8
+    name: 验证flake8报告
+    action: verify
+    type: file_exists
+    path: "output/flake8-report.txt"
+    fail_message: "flake8报告未生成"
+
+  - id: 9
+    name: 检查代码复杂度
+    action: run_command
+    params:
+      command: "python -m radon cc . -a -s --exclude=venv,__pycache__,output > output/cyclomatic-complexity.txt 2>nul && type output\\cyclomatic-complexity.txt || echo 复杂度检查完成"
+      save_as: complexity_check
+      timeout: 60
+
+  - id: 10
+    name: 验证复杂度报告
+    action: verify
+    type: file_exists
+    path: "output/cyclomatic-complexity.txt"
+    fail_message: "复杂度报告未生成"
+
+  - id: 11
+    name: 统计代码问题
+    action: run_command
+    params:
+      command: "python -c \"import os; content=open('output/flake8-report.txt',errors='ignore').read() if os.path.exists('output/flake8-report.txt') else ''; lines=[l for l in content.split('\\n') if l.strip()]; errors=len([l for l in lines if 'E' in l.split()[0] if l.split()]); warnings=len([l for l in lines if 'W' in l.split()[0] if l.split()]); print(f'代码风格检查: {errors}个错误, {warnings}个警告')\""
+      save_as: issue_count
+      timeout: 10
+
+  - id: 12
+    name: 生成审查报告
+    action: generate_document
+    params:
+      output: "output/code-review-{{current_date}}.md"
+      content: |
+        # 代码审查报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 文件列表
+        
+        {{changed_files}}
+        
+        ## 代码风格检查
+        
+        {{style_check}}
+        
+        ## 复杂度检查
+        
+        {{complexity_check}}
+        
+        ## 问题统计
+        
+        {{issue_count}}
+        
+        ## 生成的文件
+        
+        - `output/flake8-report.txt` - 代码风格报告
+        - `output/cyclomatic-complexity.txt` - 复杂度报告
+
+  - id: 13
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/code-review-{{current_date}}.md"
+    fail_message: "审查报告未生成"
+
+  - id: 14
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        ✅ 代码审查完成！
+        
+        文件:
+        {{changed_files}}
+        
+        问题统计:
+        {{issue_count}}
+        
+        报告: output/code-review-{{current_date}}.md

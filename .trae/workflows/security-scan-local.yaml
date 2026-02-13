@@ -1,0 +1,155 @@
+name: 本地安全扫描
+version: "2.1.0"
+description: 使用开源工具进行代码安全漏洞扫描，自动安装缺失工具
+created_at: "2026-02-11"
+category: security
+tags: ["security", "scanning", "vulnerability", "bandit", "safety", "auto-install"]
+triggers:
+  - "安全扫描"
+  - "漏洞检查"
+  - "security scan"
+  - "检查漏洞"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查并安装Bandit
+    action: run_command
+    params:
+      command: "python -c \"import bandit; print('bandit:', bandit.__version__)\" 2>nul || (echo 正在安装bandit... && pip install bandit -q && echo bandit安装完成)"
+      timeout: 60
+
+  - id: 3
+    name: 验证Bandit安装
+    action: verify
+    type: command_success
+    command: "python -c \"import bandit; print('bandit:', bandit.__version__)\""
+    fail_message: "Bandit安装失败"
+
+  - id: 4
+    name: 检查并安装Safety
+    action: run_command
+    params:
+      command: "python -c \"import safety; print('safety已安装')\" 2>nul || (echo 正在安装safety... && pip install safety -q && echo safety安装完成)"
+      timeout: 60
+
+  - id: 5
+    name: 验证Safety安装
+    action: verify
+    type: command_success
+    command: "python -c \"import safety; print('safety已安装')\""
+    fail_message: "Safety安装失败"
+
+  - id: 6
+    name: 运行Bandit代码安全扫描
+    action: run_command
+    params:
+      command: "python -m bandit -r . -f json -o output/bandit-report.json -x ./venv,./.git,./__pycache__,./node_modules,./output 2>nul || echo Bandit扫描完成"
+      save_as: bandit_result
+      timeout: 120
+    on_failure: "continue"
+
+  - id: 7
+    name: 验证Bandit报告
+    action: verify
+    type: file_exists
+    path: "output/bandit-report.json"
+    fail_message: "Bandit报告未生成"
+
+  - id: 8
+    name: 解析Bandit结果
+    action: run_command
+    params:
+      command: "python -c \"import json,os; f='output/bandit-report.json'; data=json.load(open(f)) if os.path.exists(f) and os.path.getsize(f)>0 else {'results':[]}; results=data.get('results',[]); severities={}; [severities.update({r.get('issue_severity','?'):severities.get(r.get('issue_severity','?'),0)+1}) for r in results]; print(f'发现 {len(results)} 个安全问题'); [print(f'  {k}: {v}个') for k,v in severities.items()]; [print(f\\\"  [{r.get('issue_severity','?')}] {r.get('test_id','?')}: {r.get('issue_text','')[:60]}\\\") for r in results[:5]]\""
+      save_as: bandit_summary
+      timeout: 15
+    on_failure: "continue"
+
+  - id: 9
+    name: 检查依赖安全漏洞
+    action: run_command
+    params:
+      command: "python -m safety check --json > output/safety-report.json 2>nul && echo Safety扫描完成 || (python -c \"open('output/safety-report.json','w').write('[]')\" && echo 无requirements.txt或无漏洞)"
+      save_as: safety_result
+      timeout: 60
+
+  - id: 10
+    name: 解析Safety结果
+    action: run_command
+    params:
+      command: "python -c \"import json,os; f='output/safety-report.json'; data=[]; d=json.load(open(f)) if os.path.exists(f) and os.path.getsize(f)>0 else []; vulns=d if isinstance(d,list) else d.get('vulnerabilities',[]) if isinstance(d,dict) else []; print(f'发现 {len(vulns)} 个依赖漏洞'); [print(f\\\"  {v.get('package_name',v.get('package','?'))}: {v.get('vulnerability_id','?')}\\\") for v in vulns[:10]]\""
+      save_as: safety_summary
+      timeout: 15
+    on_failure: "continue"
+
+  - id: 11
+    name: 检查敏感信息泄露
+    action: run_command
+    params:
+      command: "python -c \"import os,re; patterns=['password','secret','token','api_key','private_key','aws_','credential']; files=[]; [[files.append((os.path.join(r,f),p)) for p in patterns if p in open(os.path.join(r,f),errors='ignore').read().lower()] for r,d,fs in os.walk('.') if 'venv' not in r and '.git' not in r and '__pycache__' not in r and 'output' not in r for f in fs if f.endswith(('.py','.yaml','.yml','.json','.md','.txt','.env'))]; print(f'发现 {len(files)} 个可能包含敏感信息的文件'); [print(f'  {f[0]} (关键词: {f[1]})') for f in files[:10]]\""
+      save_as: secret_check
+      timeout: 30
+
+  - id: 12
+    name: 生成安全报告
+    action: generate_document
+    params:
+      output: "output/security-scan-report-{{current_date}}.md"
+      content: |
+        # 安全扫描报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## Bandit扫描结果
+        
+        {{bandit_summary}}
+        
+        ## Safety依赖漏洞
+        
+        {{safety_summary}}
+        
+        ## 敏感信息检查
+        
+        {{secret_check}}
+        
+        ## 生成的文件
+        
+        - `output/bandit-report.json` - Bandit详细报告
+        - `output/safety-report.json` - Safety详细报告
+        
+        ## 修复建议
+        
+        1. 高危漏洞需立即修复
+        2. 移除敏感信息或使用环境变量
+        3. 更新有漏洞的依赖包
+
+  - id: 13
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/security-scan-report-{{current_date}}.md"
+    fail_message: "安全报告未生成"
+
+  - id: 14
+    name: 输出扫描结果
+    action: notify
+    params:
+      message: |
+        ✅ 安全扫描完成！
+        
+        Bandit结果:
+        {{bandit_summary}}
+        
+        Safety结果:
+        {{safety_summary}}
+        
+        敏感信息检查:
+        {{secret_check}}
+        
+        报告: output/security-scan-report-{{current_date}}.md

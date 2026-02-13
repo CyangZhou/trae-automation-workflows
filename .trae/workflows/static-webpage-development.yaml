@@ -1,0 +1,217 @@
+name: 静态网页开发与GitHub Pages部署
+description: 完整的静态网页开发流程，包含需求分析、代码实现、资源获取验证、本地预览、GitHub部署。当用户需要开发网页、创建网站、部署静态页面时调用。
+version: "1.0.0"
+created_at: "2026-02-12T16:00:00"
+triggers:
+  - "开发网页"
+  - "创建网站"
+  - "部署网页"
+  - "GitHub Pages"
+  - "静态页面"
+
+variables:
+  project_name: ""
+  repo_name: ""
+  features: []
+
+steps:
+  - id: 1
+    name: 需求确认
+    action: analyze
+    description: |
+      分析用户需求，确认以下要素：
+      - 项目类型（活动页/产品页/个人主页等）
+      - 核心功能（抽奖/表单/动画等）
+      - 视觉风格（配色/字体/布局）
+      - 资源需求（图片/音乐/字体等）
+    output:
+      - project_type
+      - core_features
+      - visual_style
+      - resource_list
+
+  - id: 2
+    name: 技术选型
+    action: decide
+    description: |
+      根据需求选择技术方案：
+      - 纯HTML/CSS/JS（简单页面）
+      - 框架方案（复杂交互）
+      - 动画库（特效需求）
+    rules:
+      - 单页面活动页 → 纯HTML/CSS/JS
+      - 复杂交互 → 考虑Vue/React CDN版
+      - 动画需求 → CSS动画优先，必要时用GSAP
+
+  - id: 3
+    name: 资源获取与验证
+    action: resource_acquisition
+    description: |
+      **关键步骤：必须验证后才能使用**
+      
+      资源获取路径优先级：
+      1. CDN直链（jsdelivr、cdnjs等）
+      2. 免费资源站（Pixabay、Unsplash等）
+      3. 外链托管服务（kkkkmmmm等）
+      4. 开源项目引用（GitHub搜索）
+      
+      验证流程：
+      1. WebFetch检查HTTP响应
+      2. 确认内容正确（非错误页）
+      3. 本地测试播放/显示
+    validation:
+      - check: http_status
+        expect: 200
+      - check: content_type
+        expect: valid_resource
+      - check: local_preview
+        expect: working
+    fail_action: try_next_source
+
+  - id: 4
+    name: 代码实现
+    action: implement
+    description: |
+      按模块顺序实现：
+      1. HTML结构（语义化标签）
+      2. CSS样式（响应式设计）
+      3. JS交互（功能逻辑）
+      4. 资源集成（已验证的资源）
+    best_practices:
+      - 使用CSS变量管理主题色
+      - 添加无障碍支持（aria标签）
+      - 支持prefers-reduced-motion
+      - 移动端适配（media query）
+
+  - id: 5
+    name: 本地预览验证
+    action: local_preview
+    description: |
+      启动本地服务器验证：
+      ```bash
+      cd output && python -m http.server 8080
+      ```
+      
+      验证清单：
+      - [ ] 页面正常加载
+      - [ ] 资源正确显示（图片/音乐/字体）
+      - [ ] 交互功能正常
+      - [ ] 移动端适配正确
+      - [ ] 无控制台错误
+
+  - id: 6
+    name: GitHub仓库准备
+    action: github_prepare
+    description: |
+      检查/创建GitHub仓库：
+      1. 确认用户已登录GitHub
+      2. 检查仓库是否存在
+      3. 不存在则创建新仓库
+      4. 仓库名建议：{project-name}
+    requirements:
+      - GitHub Token需要repo权限
+      - 仓库需要public才能使用免费Pages
+
+  - id: 7
+    name: 推送到GitHub
+    action: github_push
+    description: |
+      使用GitHub MCP推送文件：
+      ```
+      mcp_GitHub_create_or_update_file(
+        owner: 用户名,
+        repo: 仓库名,
+        path: "index.html",
+        content: 文件内容,
+        message: "feat: 初始化项目"
+      )
+      ```
+    note: 优先使用GitHub MCP而非git命令，避免网络问题
+
+  - id: 8
+    name: 启用GitHub Pages
+    action: enable_pages
+    description: |
+      配置GitHub Pages：
+      1. 进入仓库Settings
+      2. 找到Pages选项
+      3. Source选择main分支
+      4. 保存并等待部署
+      
+      访问地址：https://{username}.github.io/{repo-name}/
+
+  - id: 9
+    name: 线上验证
+    action: verify_production
+    description: |
+      验证线上版本：
+      1. 访问Pages地址
+      2. 确认资源加载正常
+      3. 测试所有功能
+      4. 检查移动端显示
+      
+      如有问题：
+      - 检查资源路径（相对路径）
+      - 检查CORS问题
+      - 检查混合内容（HTTP/HTTPS）
+
+  - id: 10
+    name: 完成交付
+    action: deliver
+    description: |
+      向用户报告：
+      - 项目访问地址
+      - 核心功能说明
+      - 使用注意事项
+      - 后续优化建议
+
+error_handling:
+  resource_not_found:
+    action: 换路径继续搜索，不降级目标
+    message: "资源获取中，尝试多种路径..."
+  
+  github_auth_failed:
+    action: 提示用户检查Token权限
+    message: "GitHub认证失败，请确认Token有repo权限"
+  
+  pages_deploy_failed:
+    action: 检查仓库设置，重新配置
+    message: "Pages部署失败，正在检查配置..."
+
+validation_rules:
+  - name: 资源验证
+    description: 所有外部资源必须验证可用
+    critical: true
+    
+  - name: 本地预览
+    description: 推送前必须本地预览验证
+    critical: true
+    
+  - name: 线上验证
+    description: 部署后必须验证线上版本
+    critical: true
+
+example_usage:
+  user_request: "帮我做一个春节活动网页，要有抽奖功能"
+  
+  execution_flow:
+    - step: 1
+      action: 确认需求（春节主题、抽奖功能、喜庆风格）
+    - step: 2
+      action: 选择纯HTML/CSS/JS方案
+    - step: 3
+      action: 搜索春节音乐→验证外链可用
+    - step: 4
+      action: 实现转盘抽奖、祝福卡片等功能
+    - step: 5
+      action: 本地启动服务器预览
+    - step: 6
+      action: 创建GitHub仓库
+    - step: 7
+      action: 推送代码到GitHub
+    - step: 8
+      action: 启用GitHub Pages
+    - step: 9
+      action: 验证线上访问正常
+    - step: 10
+      action: 交付访问地址给用户

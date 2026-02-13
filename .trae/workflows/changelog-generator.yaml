@@ -1,0 +1,125 @@
+name: 变更日志生成器
+version: "1.0.0"
+description: 基于git提交记录自动生成CHANGELOG.md
+created_at: "2026-02-11"
+category: documentation
+tags: ["changelog", "git", "release", "documentation", "history"]
+triggers:
+  - "生成changelog"
+  - "更新变更日志"
+  - "生成发布说明"
+  - "changelog"
+steps:
+  - id: 1
+    name: 获取git标签列表
+    action: run_command
+    params:
+      command: "git tag --sort=-version:refname | head -10"
+      save_as: git_tags
+      timeout: 10
+
+  - id: 2
+    name: 获取最近的提交历史
+    action: run_command
+    params:
+      command: "git log --pretty=format:'%h|%s|%an|%ad' --date=short -50"
+      save_as: commit_history
+      timeout: 10
+
+  - id: 3
+    name: 分析提交类型
+    action: run_command
+    params:
+      command: |
+        echo "=== 提交类型分析 ===" &&
+        echo "功能添加 (feat):" && git log --oneline --grep="^feat" -20 2>nul | wc -l &&
+        echo "修复 (fix):" && git log --oneline --grep="^fix" -20 2>nul | wc -l &&
+        echo "文档 (docs):" && git log --oneline --grep="^docs" -20 2>nul | wc -l &&
+        echo "重构 (refactor):" && git log --oneline --grep="^refactor" -20 2>nul | wc -l &&
+        echo "测试 (test):" && git log --oneline --grep="^test" -20 2>nul | wc -l &&
+        echo "其他:" && git log --oneline --grep="^chore\|^style\|^perf" -20 2>nul | wc -l
+      save_as: commit_types
+      timeout: 15
+
+  - id: 4
+    name: 提取功能变更
+    action: run_command
+    params:
+      command: |
+        echo "### ✨ 新功能" &&
+        git log --pretty=format:'- %s (%h)' --grep="^feat" -20 2>nul &&
+        echo "" &&
+        echo "### 🐛 修复" &&
+        git log --pretty=format:'- %s (%h)' --grep="^fix" -20 2>nul
+      save_as: feature_changes
+      timeout: 10
+
+  - id: 5
+    name: 生成CHANGELOG内容
+    action: run_command
+    params:
+      command: |
+        echo "# Changelog" > CHANGELOG.tmp &&
+        echo "" >> CHANGELOG.tmp &&
+        echo "所有项目的显著变更都将记录在此文件中。" >> CHANGELOG.tmp &&
+        echo "" >> CHANGELOG.tmp &&
+        echo "格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，" >> CHANGELOG.tmp &&
+        echo "并且该项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。" >> CHANGELOG.tmp &&
+        echo "" >> CHANGELOG.tmp &&
+        echo "## [Unreleased]" >> CHANGELOG.tmp &&
+        echo "" >> CHANGELOG.tmp &&
+        echo "{{feature_changes}}" >> CHANGELOG.tmp &&
+        echo "" >> CHANGELOG.tmp &&
+        echo "### 📚 文档" >> CHANGELOG.tmp &&
+        git log --pretty=format:'- %s (%h)' --grep="^docs" -10 2>nul >> CHANGELOG.tmp &&
+        echo "" >> CHANGELOG.tmp &&
+        echo "### 🔧 其他变更" >> CHANGELOG.tmp &&
+        git log --pretty=format:'- %s (%h)' --grep="^chore\|^refactor\|^style\|^perf" -10 2>nul >> CHANGELOG.tmp &&
+        type CHANGELOG.tmp
+      save_as: changelog_content
+      timeout: 15
+
+  - id: 6
+    name: 写入CHANGELOG文件
+    action: run_command
+    params:
+      command: |
+        type CHANGELOG.tmp > CHANGELOG.md &&
+        del CHANGELOG.tmp &&
+        echo "CHANGELOG.md 已更新" &&
+        type CHANGELOG.md | head -50
+      save_as: write_result
+      timeout: 10
+
+  - id: 7
+    name: 生成发布说明草稿
+    action: generate_document
+    params:
+      template: "release-notes.md"
+      variables:
+        version: "{{git_tags}}"
+        changes: "{{feature_changes}}"
+        commit_types: "{{commit_types}}"
+        date: "{{current_date}}"
+      output: "docs/release-notes-draft-{{current_date}}.md"
+      save_as: release_notes
+
+  - id: 8
+    name: 输出生成结果
+    action: notify
+    params:
+      message: |
+        变更日志生成完成！
+        
+        最近的标签:
+        {{git_tags}}
+        
+        提交类型统计:
+        {{commit_types}}
+        
+        主要变更:
+        {{feature_changes}}
+        
+        文件已更新:
+        - CHANGELOG.md
+        - {{release_notes}}

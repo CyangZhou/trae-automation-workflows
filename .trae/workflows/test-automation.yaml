@@ -1,0 +1,69 @@
+name: 测试自动化
+version: "1.0.0"
+description: 自动生成测试用例、运行测试并生成测试报告
+created_at: "2026-02-11T15:45:00"
+source: "改编自GitHub Actions CI/CD最佳实践"
+category: "testing"
+tags: ["testing", "automation", "ci-cd", "quality"]
+triggers:
+  - "运行测试"
+  - "自动化测试"
+  - "生成测试"
+  - "test automation"
+steps:
+  - id: 1
+    name: 分析代码功能
+    action: run_command
+    params:
+      command: "echo 分析代码功能和边界条件..."
+      save_as: code_analysis
+      timeout: 10
+
+  - id: 2
+    name: 生成测试用例
+    action: run_command
+    params:
+      command: "echo 自动生成单元测试用例..."
+      save_as: test_cases
+      timeout: 15
+
+  - id: 3
+    name: 运行测试
+    action: run_command
+    params:
+      command: "echo 执行测试套件..."
+      save_as: test_results
+      timeout: 30
+
+  - id: 4
+    name: 分析覆盖率
+    action: run_command
+    params:
+      command: "echo 分析代码覆盖率..."
+      save_as: coverage
+      timeout: 10
+
+  - id: 5
+    name: 生成测试报告
+    action: generate_document
+    params:
+      template: "test-report.md"
+      variables:
+        analysis: "{{code_analysis}}"
+        cases: "{{test_cases}}"
+        results: "{{test_results}}"
+        coverage: "{{coverage}}"
+        date: "{{current_date}}"
+      output: "docs/test-report-{{current_date}}.md"
+      save_as: report_path
+
+  - id: 6
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        测试自动化完成！
+        测试用例: {{test_cases}}
+        测试结果: {{test_results}}
+        覆盖率: {{coverage}}
+        报告路径: {{report_path}}

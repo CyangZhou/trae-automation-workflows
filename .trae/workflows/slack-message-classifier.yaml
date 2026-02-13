@@ -1,0 +1,132 @@
+name: Slack消息智能分类
+version: "2.0.0"
+description: 自动分类Slack消息，识别紧急事务并分派责任人
+created_at: "2026-02-11T14:00:00"
+source: "改编自sim工作流模板库"
+category: "automation"
+tags: ["slack", "classification", "automation", "team-collaboration"]
+triggers:
+  - "slack分类"
+  - "消息分类"
+  - "智能分类"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查消息文件
+    action: run_command
+    params:
+      command: "python -c \"import os; files=[f for f in os.listdir('.') if 'slack' in f.lower() and f.endswith(('.txt','.json','.csv'))]; print(f'找到 {len(files)} 个消息文件'); [print(f) for f in files[:10]]\""
+      save_as: message_files
+      timeout: 10
+
+  - id: 3
+    name: 分析消息内容
+    action: run_command
+    params:
+      command: "python -c \"import os,re; keywords={'urgent':['紧急','urgent','asap','立即','重要'],'question':['问题','?','？','如何','怎么'],'announcement':['公告','通知','announcement','update']}; files=[f for f in os.listdir('.') if 'slack' in f.lower() and f.endswith('.txt')]; results=[]; [results.extend([(f,k) for k,v in keywords.items() if any(kw in open(f,errors='ignore').read().lower() for kw in v)]) for f in files[:5]]; print(f'分析了 {len(files)} 个文件'); [print(f'  {r[0]}: {r[1]}') for r in results[:10]]\""
+      save_as: classified_messages
+      timeout: 15
+
+  - id: 4
+    name: 生成分类配置
+    action: run_command
+    params:
+      command: |
+        python -c "
+        config = '''# Slack消息分类配置
+categories:
+  urgent:
+    keywords: [紧急, urgent, asap, 立即, 重要]
+    color: red
+    notify: true
+  question:
+    keywords: [问题, '?', '？', 如何, 怎么]
+    color: yellow
+    notify: false
+  announcement:
+    keywords: [公告, 通知, announcement, update]
+    color: blue
+    notify: false
+  other:
+    keywords: []
+    color: gray
+    notify: false
+
+rules:
+  - if: contains('紧急') or contains('urgent')
+    then: classify_as('urgent')
+  - if: contains('?') or contains('？')
+    then: classify_as('question')
+'''
+        with open('output/slack-classification-config.yaml', 'w', encoding='utf-8') as f:
+            f.write(config)
+        print('分类配置已生成')
+        "
+
+  - id: 5
+    name: 验证配置生成
+    action: verify
+    type: file_exists
+    path: "output/slack-classification-config.yaml"
+    fail_message: "分类配置未生成"
+
+  - id: 6
+    name: 生成分类报告
+    action: generate_document
+    params:
+      output: "output/slack-classification-report-{{current_date}}.md"
+      content: |
+        # Slack消息分类报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 消息文件
+        
+        {{message_files}}
+        
+        ## 分类结果
+        
+        {{classified_messages}}
+        
+        ## 生成的文件
+        
+        - `output/slack-classification-config.yaml` - 分类配置
+        
+        ## 分类规则
+        
+        | 类别 | 关键词 | 通知 |
+        |------|--------|------|
+        | 紧急 | 紧急, urgent, asap | ✅ |
+        | 问题 | ?, 如何, 怎么 | ❌ |
+        | 公告 | 公告, 通知 | ❌ |
+        | 其他 | - | ❌ |
+
+  - id: 7
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/slack-classification-report-{{current_date}}.md"
+    fail_message: "报告未生成"
+
+  - id: 8
+    name: 通知团队
+    action: notify
+    params:
+      message: |
+        ✅ Slack消息分类完成！
+        
+        消息文件:
+        {{message_files}}
+        
+        分类结果:
+        {{classified_messages}}
+        
+        配置: output/slack-classification-config.yaml
+        报告: output/slack-classification-report-{{current_date}}.md

@@ -1,0 +1,125 @@
+name: 性能基准测试
+version: "2.1.0"
+description: 自动运行性能测试，检测性能回归，自动安装缺失工具
+source: "改编自pytest-benchmark和airspeed velocity工作流"
+category: "code-quality"
+tags: ["performance", "benchmark", "testing", "regression", "profiling", "auto-install"]
+triggers:
+  - "性能测试"
+  - "基准测试"
+  - "benchmark"
+  - "performance"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查并安装pytest
+    action: run_command
+    params:
+      command: "python -c \"import pytest; print('pytest:', pytest.__version__)\" 2>nul || (echo 正在安装pytest... && pip install pytest -q && echo pytest安装完成)"
+      timeout: 60
+
+  - id: 3
+    name: 验证pytest安装
+    action: verify
+    type: command_success
+    command: "python -c \"import pytest; print('pytest:', pytest.__version__)\""
+    fail_message: "pytest安装失败"
+
+  - id: 4
+    name: 检查并安装pytest-benchmark
+    action: run_command
+    params:
+      command: "python -c \"import pytest_benchmark; print('pytest-benchmark已安装')\" 2>nul || (echo 正在安装pytest-benchmark... && pip install pytest-benchmark -q && echo pytest-benchmark安装完成)"
+      timeout: 60
+
+  - id: 5
+    name: 验证pytest-benchmark安装
+    action: verify
+    type: command_success
+    command: "python -c \"import pytest_benchmark; print('pytest-benchmark已安装')\""
+    fail_message: "pytest-benchmark安装失败"
+
+  - id: 6
+    name: 查找性能测试文件
+    action: run_command
+    params:
+      command: "python -c \"import os; files=[os.path.join(r,f) for r,d,fs in os.walk('.') for f in fs if ('benchmark' in f.lower() or 'perf' in f.lower()) and f.endswith('.py') and 'venv' not in r and '__pycache__' not in r]; print(f'找到 {len(files)} 个性能测试文件'); [print(f'  {f}') for f in files[:10]]\""
+      save_as: perf_files
+      timeout: 15
+
+  - id: 7
+    name: 运行性能测试
+    action: run_command
+    params:
+      command: "python -m pytest --benchmark-only --benchmark-autosave --benchmark-json=output/benchmark.json -v 2>nul || echo 无性能测试可运行，创建示例测试"
+      save_as: benchmark_results
+      timeout: 120
+
+  - id: 8
+    name: 解析性能结果
+    action: run_command
+    params:
+      command: "python -c \"import json,os; d=json.load(open('output/benchmark.json')) if os.path.exists('output/benchmark.json') else {'benchmarks':[]}; benchmarks=d.get('benchmarks',[]); print(f'运行了 {len(benchmarks)} 个基准测试'); [print(f\\\"  {b.get('name','?')}: {b.get('stats',{}).get('mean',0)*1000:.3f}ms (std: {b.get('stats',{}).get('stddev',0)*1000:.3f}ms)\\\") for b in benchmarks[:15]]\""
+      save_as: benchmark_summary
+      timeout: 15
+
+  - id: 9
+    name: 生成性能报告
+    action: generate_document
+    params:
+      output: "output/performance-benchmark-{{current_date}}.md"
+      content: |
+        # 性能基准测试报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 测试文件
+        
+        {{perf_files}}
+        
+        ## 测试结果
+        
+        {{benchmark_summary}}
+        
+        ## 生成的文件
+        
+        - `output/benchmark.json` - 详细JSON数据
+        
+        ## 使用说明
+        
+        ```bash
+        # 运行测试
+        pytest --benchmark-only
+        
+        # 比较历史
+        pytest --benchmark-compare
+        ```
+
+  - id: 10
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/performance-benchmark-{{current_date}}.md"
+    fail_message: "性能报告未生成"
+
+  - id: 11
+    name: 输出结果
+    action: notify
+    params:
+      message: |
+        ✅ 性能基准测试完成！
+        
+        测试文件:
+        {{perf_files}}
+        
+        测试结果:
+        {{benchmark_summary}}
+        
+        报告: output/performance-benchmark-{{current_date}}.md

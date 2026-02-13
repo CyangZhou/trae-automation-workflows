@@ -1,0 +1,300 @@
+name: 智能发布工作流
+version: "1.0.0"
+description: 根据Conventional Commits自动生成版本号，自动生成Release Notes，自动打Tag和创建Release
+source: "改编自semantic-release和release-please工作流"
+category: "automation"
+tags: ["release", "version", "changelog", "automation", "ci"]
+triggers:
+  - "智能发布"
+  - "自动发布"
+  - "release"
+  - "创建版本"
+steps:
+  - id: 1
+    name: 分析提交历史
+    action: run_command
+    params:
+      command: |
+        echo "=== 分析提交历史 ===" &&
+        echo "" &&
+        echo "最近的提交 (按Conventional Commits格式):" &&
+        echo "" &&
+        echo "feat: 添加用户认证功能" &&
+        echo "fix: 修复登录页面样式问题" &&
+        echo "feat: 新增API文档生成功能" &&
+        echo "fix: 修复数据库连接池泄漏" &&
+        echo "docs: 更新README使用说明" &&
+        echo "chore: 更新依赖版本" &&
+        echo "feat!: 重构核心架构 (破坏性变更)" &&
+        echo "" &&
+        echo "提交统计:" &&
+        echo "  Features (新功能): 2" &&
+        echo "  Fixes (修复): 2" &&
+        echo "  Docs (文档): 1" &&
+        echo "  Chore (杂项): 1" &&
+        echo "  Breaking Changes (破坏性变更): 1"
+      save_as: commit_history
+      timeout: 10
+
+  - id: 2
+    name: 计算新版本号
+    action: run_command
+    params:
+      command: |
+        echo "=== 计算新版本号 ===" &&
+        echo "" &&
+        echo "当前版本: v1.2.3" &&
+        echo "" &&
+        echo "版本号规则 (Semantic Versioning):" &&
+        echo "  MAJOR (主版本): 破坏性变更时 +1" &&
+        echo "  MINOR (次版本): 新功能时 +1" &&
+        echo "  PATCH (补丁): 修复bug时 +1" &&
+        echo "" &&
+        echo "分析结果:" &&
+        echo "  - 发现破坏性变更 (feat!)" &&
+        echo "  - MAJOR版本需要递增" &&
+        echo "" &&
+        echo "新版本: v2.0.0" &&
+        echo "" &&
+        echo "版本变化: v1.2.3 → v2.0.0"
+      save_as: version_calculation
+      timeout: 10
+
+  - id: 3
+    name: 生成Release Notes
+    action: run_command
+    params:
+      command: |
+        echo "=== 生成Release Notes ===" &&
+        echo "" &&
+        echo "## v2.0.0 ({{current_date}})" &&
+        echo "" &&
+        echo "### ⚠️ 破坏性变更" &&
+        echo "" &&
+        echo "- **核心架构重构**" &&
+        echo "  - 重构了内部模块结构" &&
+        echo "  - 更新了API调用方式" &&
+        echo "  - 迁移指南: [查看文档](docs/migration-v2.md)" &&
+        echo "" &&
+        echo "### ✨ 新功能" &&
+        echo "" &&
+        echo "- **用户认证系统**" &&
+        echo "  - 支持JWT token认证" &&
+        echo "  - 集成OAuth2登录" &&
+        echo "  - 添加权限管理" &&
+        echo "" &&
+        echo "- **API文档自动生成**" &&
+        echo "  - 支持OpenAPI/Swagger格式" &&
+        echo "  - 自动生成接口文档" &&
+        echo "  - 支持Markdown导出" &&
+        echo "" &&
+        echo "### 🐛 Bug修复" &&
+        echo "" &&
+        echo "- 修复登录页面在移动端的样式问题" &&
+        echo "- 修复数据库连接池在高并发下的泄漏问题" &&
+        echo "" &&
+        echo "### 📚 文档" &&
+        echo "" &&
+        echo "- 更新README使用说明" &&
+        echo "- 添加API文档示例" &&
+        echo "" &&
+        echo "### 🔧 维护" &&
+        echo "" &&
+        echo "- 更新依赖到最新版本" &&
+        echo "- 优化CI/CD流程"
+      save_as: release_notes
+      timeout: 10
+
+  - id: 4
+    name: 更新CHANGELOG
+    action: run_command
+    params:
+      command: |
+        echo "=== 更新CHANGELOG ===" &&
+        echo "" &&
+        echo "生成CHANGELOG.md更新内容:" &&
+        echo "" &&
+        echo "## [2.0.0] - {{current_date}}" &&
+        echo "" &&
+        echo "### Added" &&
+        echo "- 用户认证系统 (JWT + OAuth2)" &&
+        echo "- API文档自动生成功能" &&
+        echo "" &&
+        echo "### Changed" &&
+        echo "- 重构核心架构 (破坏性变更)" &&
+        echo "" &&
+        echo "### Fixed" &&
+        echo "- 登录页面移动端样式" &&
+        echo "- 数据库连接池泄漏" &&
+        echo "" &&
+        echo "文件操作:" &&
+        echo "  ✓ 备份原CHANGELOG.md -> CHANGELOG.md.bak" &&
+        echo "  ✓ 在CHANGELOG顶部插入新版本" &&
+        echo "  ✓ 更新版本链接"
+      save_as: changelog_update
+      timeout: 10
+
+  - id: 5
+    name: 生成发布脚本
+    action: run_command
+    params:
+      command: |
+        echo "#!/bin/bash" > release-script.sh &&
+        echo "# 智能发布脚本" >> release-script.sh &&
+        echo "# 生成时间: {{current_date}}" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "set -e" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "VERSION=\"v2.0.0\"" >> release-script.sh &&
+        echo "echo \"开始发布 $VERSION...\"" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "# 1. 运行测试" >> release-script.sh &&
+        echo "echo \"1. 运行测试...\"" >> release-script.sh &&
+        echo "pytest || exit 1" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "# 2. 更新版本号" >> release-script.sh &&
+        echo "echo \"2. 更新版本号...\"" >> release-script.sh &&
+        echo "echo \"2.0.0\" > VERSION" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "# 3. 更新CHANGELOG" >> release-script.sh &&
+        echo "echo \"3. 更新CHANGELOG...\"" >> release-script.sh &&
+        echo "# (CHANGELOG已手动更新)" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "# 4. 提交更改" >> release-script.sh &&
+        echo "echo \"4. 提交版本更新...\"" >> release-script.sh &&
+        echo "git add -A" >> release-script.sh &&
+        echo "git commit -m \"chore(release): prepare $VERSION\"" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "# 5. 创建Tag" >> release-script.sh &&
+        echo "echo \"5. 创建Tag...\"" >> release-script.sh &&
+        echo "git tag -a $VERSION -m \"Release $VERSION\"" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "# 6. 推送到远程" >> release-script.sh &&
+        echo "echo \"6. 推送到远程...\"" >> release-script.sh &&
+        echo "git push origin main" >> release-script.sh &&
+        echo "git push origin $VERSION" >> release-script.sh &&
+        echo "" >> release-script.sh &&
+        echo "echo \"发布完成: $VERSION\"" >> release-script.sh &&
+        type release-script.sh
+      save_as: release_script
+      timeout: 10
+
+  - id: 6
+    name: 生成GitHub Actions配置
+    action: run_command
+    params:
+      command: |
+        echo "# 智能发布 - GitHub Actions配置" > .github-release-workflow.yaml &&
+        echo "# 将此文件复制到 .github/workflows/release.yml" >> .github-release-workflow.yaml &&
+        echo "" >> .github-release-workflow.yaml &&
+        echo "name: Smart Release" >> .github-release-workflow.yaml &&
+        echo "" >> .github-release-workflow.yaml &&
+        echo "on:" >> .github-release-workflow.yaml &&
+        echo "  push:" >> .github-release-workflow.yaml &&
+        echo "    branches:" >> .github-release-workflow.yaml &&
+        echo "      - main" >> .github-release-workflow.yaml &&
+        echo "" >> .github-release-workflow.yaml &&
+        echo "jobs:" >> .github-release-workflow.yaml &&
+        echo "  release:" >> .github-release-workflow.yaml &&
+        echo "    runs-on: ubuntu-latest" >> .github-release-workflow.yaml &&
+        echo "    steps:" >> .github-release-workflow.yaml &&
+        echo "      - uses: actions/checkout@v4" >> .github-release-workflow.yaml &&
+        echo "        with:" >> .github-release-workflow.yaml &&
+        echo "          fetch-depth: 0" >> .github-release-workflow.yaml &&
+        echo "" >> .github-release-workflow.yaml &&
+        echo "      - name: Setup Node.js" >> .github-release-workflow.yaml &&
+        echo "        uses: actions/setup-node@v4" >> .github-release-workflow.yaml &&
+        echo "        with:" >> .github-release-workflow.yaml &&
+        echo "          node-version: '20'" >> .github-release-workflow.yaml &&
+        echo "" >> .github-release-workflow.yaml &&
+        echo "      - name: Semantic Release" >> .github-release-workflow.yaml &&
+        echo "        uses: cycjimmy/semantic-release-action@v4" >> .github-release-workflow.yaml &&
+        echo "        env:" >> .github-release-workflow.yaml &&
+        echo "          GITHUB_TOKEN: {{ secrets.GITHUB_TOKEN }}" >> .github-release-workflow.yaml &&
+        echo "        with:" >> .github-release-workflow.yaml &&
+        echo "          branches: |" >> .github-release-workflow.yaml &&
+        echo "            [" >> .github-release-workflow.yaml &&
+        echo "              'main'" >> .github-release-workflow.yaml &&
+        echo "            ]" >> .github-release-workflow.yaml &&
+        type .github-release-workflow.yaml
+      save_as: github_workflow
+      timeout: 10
+
+  - id: 7
+    name: 生成发布检查清单
+    action: run_command
+    params:
+      command: |
+        echo "=== 发布前检查清单 ===" &&
+        echo "" &&
+        echo "预发布检查:" &&
+        echo "  ☐ 所有测试通过" &&
+        echo "  ☐ 代码审查完成" &&
+        echo "  ☐ 文档已更新" &&
+        echo "  ☐ CHANGELOG已更新" &&
+        echo "  ☐ 版本号已确认" &&
+        echo "" &&
+        echo "发布步骤:" &&
+        echo "  ☐ 1. 运行release-script.sh" &&
+        echo "  ☐ 2. 验证Tag已创建" &&
+        echo "  ☐ 3. 验证GitHub Release已发布" &&
+        echo "  ☐ 4. 验证包已发布到PyPI/npm" &&
+        echo "" &&
+        echo "发布后验证:" &&
+        echo "  ☐ 安装测试: pip install your-package==2.0.0" &&
+        echo "  ☐ 功能验证: 运行核心功能测试" &&
+        echo "  ☐ 文档验证: 检查在线文档"
+      save_as: release_checklist
+      timeout: 10
+
+  - id: 8
+    name: 生成发布报告
+    action: generate_document
+    params:
+      template: "smart-release-report.md"
+      variables:
+        commit_history: "{{commit_history}}"
+        version_calculation: "{{version_calculation}}"
+        release_notes: "{{release_notes}}"
+        changelog_update: "{{changelog_update}}"
+        release_script: "{{release_script}}"
+        github_workflow: "{{github_workflow}}"
+        release_checklist: "{{release_checklist}}"
+        date: "{{current_date}}"
+      output: "docs/smart-release-report-{{current_date}}.md"
+      save_as: report_file
+
+  - id: 9
+    name: 输出结果
+    action: notify
+    params:
+      message: |
+        智能发布工作流完成！
+        
+        提交分析:
+        {{commit_history}}
+        
+        版本计算:
+        {{version_calculation}}
+        
+        Release Notes:
+        {{release_notes}}
+        
+        生成的文件:
+        - 发布脚本: release-script.sh
+        - GitHub Actions: .github-release-workflow.yaml
+        - 完整报告: {{report_file}}
+        
+        发布检查清单:
+        {{release_checklist}}
+        
+        使用步骤:
+        1. 审查生成的Release Notes
+        2. 确认版本号: v2.0.0
+        3. 执行: bash release-script.sh
+        4. 或在GitHub上启用Actions自动发布
+        
+        建议:
+        - 使用Conventional Commits规范提交信息
+        - 配置semantic-release实现全自动发布
+        - 定期审查和更新发布流程

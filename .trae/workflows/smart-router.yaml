@@ -1,0 +1,247 @@
+name: smart-router
+description: 智能路由系统 v3.0 - 自动判断任务类型，选择最优执行方式（单Agent/蜂群模式），并强制执行验证验收
+version: "3.0.0"
+
+trigger:
+  type: auto
+  keywords:
+    - 开始
+    - 继续
+    - 自主执行
+    - 智能路由
+    - 自动验证
+    - 蜂群
+    - 并行执行
+    - /swarm
+
+# 智能路由配置
+routing:
+  # 任务类型识别规则
+  task_patterns:
+    standard:
+      patterns:
+        - "安全扫描"
+        - "代码审查"
+        - "测试覆盖率"
+        - "依赖检查"
+        - "性能测试"
+      action: "workflow"
+      reason: "标准化任务，使用预定义工作流"
+      
+    repetitive:
+      patterns:
+        - "每天"
+        - "每周"
+        - "定时"
+        - "自动"
+      action: "workflow"
+      reason: "重复性任务，生成可复用工作流"
+      
+    one_time:
+      patterns:
+        - "帮我写"
+        - "修改这个"
+        - "优化一下"
+        - "修复"
+      action: "builtin"
+      reason: "一次性任务，使用内置工具"
+      
+    complex:
+      patterns:
+        - "重构"
+        - "架构"
+        - "系统设计"
+        - "开发一个"
+        - "实现一个"
+        - "构建"
+      action: "swarm"
+      reason: "复杂任务，启动蜂群模式"
+
+  # 🆕 蜂群模式配置
+  swarm_mode:
+    enabled: true
+    trigger_conditions:
+      - complexity: "complex"
+      - user_request: ["并行执行", "蜂群模式", "/swarm"]
+      - estimated_time: ">5min"
+    
+    orchestrator:
+      skill: "swarm-orchestrator"
+      
+    workers:
+      researcher:
+        max_instances: 2
+        timeout: 180
+      coder:
+        max_instances: 3
+        timeout: 600
+      tester:
+        max_instances: 2
+        timeout: 300
+      writer:
+        max_instances: 1
+        timeout: 180
+      reviewer:
+        max_instances: 1
+        timeout: 180
+
+# 验证验收配置（强制执行）
+validation:
+  enabled: true
+  strict: true
+  
+  code_quality:
+    - name: "语法检查"
+      type: "lint"
+      tools: ["eslint", "html-validate", "stylelint"]
+      fail_action: "block"
+      
+    - name: "类型检查"
+      type: "typecheck"
+      tools: ["tsc", "mypy"]
+      fail_action: "block"
+      
+  runtime:
+    - name: "功能测试"
+      type: "functional"
+      tests:
+        - "核心功能可交互"
+        - "表单可提交"
+        - "按钮可点击"
+      fail_action: "block"
+      
+    - name: "边界测试"
+      type: "boundary"
+      tests:
+        - "空输入处理"
+        - "超长输入处理"
+        - "特殊字符处理"
+      fail_action: "warn"
+
+# 执行流程
+workflow:
+  steps:
+    - id: 1
+      name: "任务分析"
+      action: "analyze"
+      description: "分析任务类型，确定执行方式"
+      
+    - id: 2
+      name: "路由决策"
+      action: "route"
+      description: "根据分析结果选择执行路径"
+      
+    - id: 3
+      name: "执行模式选择"
+      action: "select_mode"
+      description: |
+        根据任务复杂度选择执行模式：
+        - 简单任务 → 单Agent执行
+        - 复杂任务 → 蜂群模式
+        
+    - id: 4
+      name: "执行任务"
+      action: "execute"
+      description: "执行具体任务（内置工具/工作流/蜂群模式）"
+      modes:
+        builtin: "使用内置工具直接执行"
+        workflow: "调用预定义工作流"
+        swarm: "启动蜂群模式并行执行"
+      
+    - id: 5
+      name: "代码质量验证"
+      action: "validate"
+      type: "code_quality"
+      description: "运行静态代码检查"
+      on_failure: "block"
+      
+    - id: 6
+      name: "运行时验证"
+      action: "validate"
+      type: "runtime"
+      description: "运行功能和边界测试"
+      on_failure: "block"
+      
+    - id: 7
+      name: "验收确认"
+      action: "accept"
+      description: "确认所有验证通过，生成报告"
+      
+    - id: 8
+      name: "自动修复"
+      action: "heal"
+      condition: "validation_failed"
+      description: "自动修复发现的问题"
+      max_attempts: 3
+
+# 🆕 蜂群模式执行流程
+swarm_workflow:
+  steps:
+    - id: 1
+      name: "任务分解"
+      action: "decompose"
+      handler: "orchestrator.decompose_task"
+      description: "将复杂任务拆解为子任务"
+      
+    - id: 2
+      name: "DAG构建"
+      action: "build_dag"
+      handler: "orchestrator.build_dag"
+      description: "识别任务间依赖关系"
+      
+    - id: 3
+      name: "创建任务队列"
+      action: "create_queue"
+      handler: "orchestrator.create_queue"
+      description: "将任务写入队列文件"
+      
+    - id: 4
+      name: "Worker分发"
+      action: "dispatch"
+      handler: "orchestrator.dispatch_workers"
+      description: "将任务分发给合适的Worker"
+      
+    - id: 5
+      name: "并行执行"
+      action: "execute_parallel"
+      handler: "workers.execute"
+      description: "Worker并行执行任务"
+      parallel: true
+      
+    - id: 6
+      name: "进度监控"
+      action: "monitor"
+      handler: "orchestrator.monitor_progress"
+      description: "监控执行进度"
+      loop: true
+      interval: 5
+      
+    - id: 7
+      name: "结果整合"
+      action: "aggregate"
+      handler: "orchestrator.aggregate_results"
+      description: "收集并整合所有结果"
+      
+    - id: 8
+      name: "验证验收"
+      action: "validate"
+      handler: "validator.validate"
+      description: "验证最终结果"
+
+# 输出配置
+output:
+  report:
+    format: "markdown"
+    path: "output/validation-report.md"
+    include:
+      - "执行日志"
+      - "验证结果"
+      - "性能指标"
+      - "修复记录"
+      - "蜂群执行报告"
+      
+  artifacts:
+    - "验证报告"
+    - "性能报告"
+    - "修复后的代码"
+    - "蜂群执行报告"

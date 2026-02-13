@@ -1,0 +1,127 @@
+name: PR 大小自动标记
+version: "2.0.0"
+description: 根据代码变更行数自动标记PR大小，超大PR自动提醒拆分
+source: "改编自GitHub Actions size-label工作流"
+category: "code-quality"
+tags: ["pr", "label", "size", "code-review", "automation"]
+triggers:
+  - "标记PR大小"
+  - "PR大小"
+  - "size label"
+  - "pr size"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 获取Git变更统计
+    action: run_command
+    params:
+      command: "git diff --stat HEAD~1 2>nul || python -c \"print('无Git历史，统计当前代码')\""
+      save_as: git_stats
+      timeout: 10
+
+  - id: 3
+    name: 计算变更行数
+    action: run_command
+    params:
+      command: "git diff --numstat HEAD~1 2>nul | python -c \"import sys; lines=[l.split() for l in sys.stdin if l.strip()]; added=sum(int(l[0]) for l in lines if l[0].isdigit()); deleted=sum(int(l[1]) for l in lines if l[1].isdigit()); print(f'新增: {added}行, 删除: {deleted}行, 总变更: {added+deleted}行')\" || echo 无法计算变更"
+      save_as: change_stats
+      timeout: 10
+
+  - id: 4
+    name: 评估PR大小
+    action: run_command
+    params:
+      command: "git diff --numstat HEAD~1 2>nul | python -c \"import sys; lines=[l.split() for l in sys.stdin if l.strip()]; total=sum(int(l[0])+int(l[1]) for l in lines if l[0].isdigit() and l[1].isdigit()); size='XS' if total<50 else 'S' if total<100 else 'M' if total<300 else 'L' if total<500 else 'XL'; print(f'总变更: {total}行, 大小: {size}')\" || echo 无法评估大小"
+      save_as: size_eval
+      timeout: 10
+
+  - id: 5
+    name: 生成标签配置
+    action: run_command
+    params:
+      command: |
+        python -c "
+        config = '''# PR大小标签配置
+size:
+  xs: {max: 50, color: '00ff00', name: 'size/XS'}
+  s: {max: 100, color: '90ff00', name: 'size/S'}
+  m: {max: 300, color: 'ffff00', name: 'size/M'}
+  l: {max: 500, color: 'ff9900', name: 'size/L'}
+  xl: {max: 999999, color: 'ff0000', name: 'size/XL'}
+
+messages:
+  xl_warning: '此PR变更较大(>500行)，建议拆分'
+  l_notice: '此PR变更中等(301-500行)，请确保测试覆盖'
+'''
+        with open('output/pr-size-config.yaml', 'w') as f:
+            f.write(config)
+        print('配置文件已生成')
+        "
+
+  - id: 6
+    name: 验证配置文件
+    action: verify
+    type: file_exists
+    path: "output/pr-size-config.yaml"
+    fail_message: "配置文件未生成"
+
+  - id: 7
+    name: 生成报告
+    action: generate_document
+    params:
+      output: "output/pr-size-report-{{current_date}}.md"
+      content: |
+        # PR大小评估报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 变更统计
+        
+        {{git_stats}}
+        
+        ## 行数统计
+        
+        {{change_stats}}
+        
+        ## 大小评估
+        
+        {{size_eval}}
+        
+        ## 标签标准
+        
+        | 标签 | 行数范围 | 颜色 |
+        |------|---------|------|
+        | size/XS | 0-50 | 🟢 |
+        | size/S | 51-100 | 🟡 |
+        | size/M | 101-300 | 🟠 |
+        | size/L | 301-500 | 🔴 |
+        | size/XL | >500 | ⚫ |
+
+  - id: 8
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/pr-size-report-{{current_date}}.md"
+    fail_message: "报告未生成"
+
+  - id: 9
+    name: 输出结果
+    action: notify
+    params:
+      message: |
+        ✅ PR大小评估完成！
+        
+        变更统计:
+        {{change_stats}}
+        
+        大小评估:
+        {{size_eval}}
+        
+        报告: output/pr-size-report-{{current_date}}.md

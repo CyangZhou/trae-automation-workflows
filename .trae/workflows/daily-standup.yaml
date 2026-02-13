@@ -1,0 +1,44 @@
+name: 每日站会报告
+description: 生成每日站会所需的昨日工作、今日计划、阻塞问题
+version: "1.0.0"
+created_at: "2026-02-11T12:00:00"
+source: "改编自敏捷开发最佳实践"
+triggers:
+  - "站会报告"
+  - "daily standup"
+  - "每日站会"
+  - "standup"
+steps:
+  - id: 1
+    name: 获取昨日日期
+    action: run_command
+    params:
+      command: "powershell -Command \"(Get-Date).AddDays(-1).ToString('yyyy-MM-dd')\""
+      save_as: yesterday
+      timeout: 5
+
+  - id: 2
+    name: 获取今日日期
+    action: run_command
+    params:
+      command: "powershell -Command \"(Get-Date).ToString('yyyy-MM-dd')\""
+      save_as: today
+      timeout: 5
+
+  - id: 3
+    name: 生成站会报告
+    action: generate_document
+    params:
+      template: "daily-standup.md"
+      variables:
+        yesterday: "{{yesterday}}"
+        today: "{{today}}"
+        date: "{{current_date}}"
+      output: "docs/standup-{{current_date}}.md"
+      save_as: report_path
+
+  - id: 4
+    name: 完成通知
+    action: notify
+    params:
+      message: "每日站会报告已生成: {{report_path}}"

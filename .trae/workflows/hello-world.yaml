@@ -1,0 +1,33 @@
+name: Hello World测试
+description: 测试工作流系统是否正常工作
+version: "1.0.0"
+created_at: "2026-02-11T11:35:00"
+triggers:
+  - "hello"
+  - "测试工作流"
+  - "hello world"
+steps:
+  - id: 1
+    name: 获取当前时间
+    action: run_command
+    params:
+      command: "echo %date% %time%"
+      save_as: current_datetime
+      timeout: 5
+
+  - id: 2
+    name: 列出工作流目录
+    action: run_command
+    params:
+      command: "dir *.yaml /b"
+      save_as: workflow_list
+      timeout: 5
+
+  - id: 3
+    name: 显示结果
+    action: notify
+    params:
+      message: |
+        Hello World 工作流执行成功！
+        当前时间: {{current_datetime}}
+        工作流列表: {{workflow_list}}

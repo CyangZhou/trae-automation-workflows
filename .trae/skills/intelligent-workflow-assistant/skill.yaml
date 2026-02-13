@@ -1,0 +1,207 @@
+name: intelligent-workflow-assistant
+version: "2.0.0"
+description: 智能工作流助手，像OpenWork一样主动感知项目上下文并推荐合适的工作流。当用户说"帮我看看项目"、"智能工作流"、"检查项目"、"推荐工作流"、"workflow recommend"时调用。自动分析项目文件结构、检测代码变更模式、识别项目类型（Python/Node.js/Rust/Go/Java），并智能推荐如依赖更新、代码覆盖率检查、文档同步、安全扫描等工作流。完全兼容现有Trae工作流系统，零侵入设计。
+
+triggers:
+  # 主动询问触发词
+  - "帮我看看项目"
+  - "帮我看看"
+  - "智能工作流"
+  - "检查项目"
+  - "推荐工作流"
+  - "workflow recommend"
+  - "intelligent workflow"
+  - "分析项目"
+  - "项目分析"
+  - "看看项目"
+
+category: "automation"
+tags: 
+  - "intelligent"
+  - "proactive"
+  - "context-aware"
+  - "workflow"
+  - "recommendation"
+  - "project-analysis"
+
+# 与现有系统的集成配置
+integration:
+  # 使用现有的 workflow_manager.py
+  workflow_manager: ".trae/workflows/workflow_manager.py"
+  
+  # 使用现有的 workflow-runner Skill
+  workflow_runner_skill: "workflow-runner"
+  
+  # 工作流目录（项目级优先，全局级备用）
+  workflow_dirs:
+    - ".trae/workflows"
+    - "C:/Users/Administrator/.trae-cn/workflows"
+
+# 智能配置
+intelligence:
+  enabled: true
+  
+  # 上下文分析规则
+  context_rules:
+    - name: "依赖文件变更"
+      patterns: 
+        - "requirements.txt"
+        - "package.json"
+        - "Cargo.toml"
+        - "go.mod"
+        - "pom.xml"
+        - "Gemfile"
+        - "composer.json"
+      workflow: "dependency-auto-update"
+      priority: high
+      message: "检测到依赖文件，建议检查依赖更新和安全漏洞"
+      
+    - name: "API代码变更"
+      patterns: 
+        - "*api*.py"
+        - "*route*.py"
+        - "*endpoint*.py"
+        - "*controller*.py"
+      content_patterns: 
+        - "@app.route"
+        - "def api_"
+        - "@router"
+        - "@Controller"
+        - "@RequestMapping"
+      workflow: "doc-sync-check"
+      priority: medium
+      message: "检测到API代码，建议检查文档同步"
+      
+    - name: "测试代码变更"
+      patterns: 
+        - "*test*.py"
+        - "test_*.py"
+        - "*_test.py"
+        - "*spec.js"
+        - "*test*.go"
+      workflow: "code-coverage-report"
+      priority: medium
+      message: "检测到测试代码，建议运行覆盖率检查"
+      
+    - name: "文档变更"
+      patterns: 
+        - "*.md"
+        - "*.rst"
+        - "docs/*"
+        - "README*"
+        - "CHANGELOG*"
+      workflow: "create-readme"
+      priority: low
+      message: "检测到文档变更"
+      
+    - name: "配置文件变更"
+      patterns: 
+        - "*.yaml"
+        - "*.yml"
+        - "*.json"
+        - "*.toml"
+        - "*.ini"
+        - "*.conf"
+      exclude: 
+        - "package.json"
+        - "*.trae.yaml"
+        - "tsconfig.json"
+      workflow: "config-validator"
+      priority: low
+      message: "检测到配置文件变更"
+      
+    - name: "Git提交准备"
+      git_hook: "pre-commit"
+      workflow: "security-scan-local"
+      priority: high
+      message: "提交前自动运行安全检查"
+      auto_run: true
+      
+    - name: "PR创建"
+      git_hook: "pr-created"
+      workflows: 
+        - "pr-size-labeler"
+        - "code-coverage-report"
+        - "doc-sync-check"
+      priority: high
+      message: "PR创建时自动运行检查"
+      auto_run: true
+
+  # 定时检查
+  scheduled_checks:
+    - name: "安全检查"
+      interval: "daily"
+      workflow: "security-scan-local"
+      condition: "last_run > 24h"
+      
+    - name: "Issue清理"
+      interval: "weekly"
+      workflow: "issue-stale-manager"
+      condition: "open_issues > 10"
+
+# 用户偏好（持久化存储）
+user_preferences:
+  # 自动执行的工作流（无需确认）
+  auto_execute: []
+  
+  # 忽略的工作流
+  ignored: []
+  
+  # 学习数据
+  learning:
+    # 用户经常选择的工作流
+    frequently_used: []
+    
+    # 用户忽略的模式
+    ignored_patterns: []
+
+# 输出配置
+output:
+  # 显示格式
+  format: "interactive"  # interactive / simple / verbose
+  
+  # 交互选项
+  show_one_click: true
+  show_dismiss: true
+  show_details: true
+  
+  # 通知方式
+  notification: "inline"  # inline / popup / status_bar / none
+
+# 支持的工作流（完整列表）
+supported_workflows:
+  - name: "dependency-auto-update"
+    description: "依赖自动更新检查"
+    triggers: ["依赖更新", "检查依赖"]
+    
+  - name: "code-coverage-report"
+    description: "代码覆盖率报告生成"
+    triggers: ["覆盖率", "测试报告"]
+    
+  - name: "doc-sync-check"
+    description: "文档同步检查"
+    triggers: ["文档同步", "检查文档"]
+    
+  - name: "security-scan-local"
+    description: "本地安全扫描"
+    triggers: ["安全检查", "安全扫描"]
+    
+  - name: "pr-size-labeler"
+    description: "PR大小自动标记"
+    triggers: ["PR大小", "标记PR"]
+    
+  - name: "issue-stale-manager"
+    description: "Issue自动管理"
+    triggers: ["清理Issue", "管理Stale"]
+    
+  - name: "smart-release"
+    description: "智能发布工作流"
+    triggers: ["智能发布", "自动发布"]
+    
+  - name: "license-compliance"
+    description: "许可证合规检查"
+    triggers: ["检查许可证", "许可证合规"]
+    
+  - name: "performance-benchmark"
+    description: "性能基准测试"
+    triggers: ["性能测试", "基准测试"]

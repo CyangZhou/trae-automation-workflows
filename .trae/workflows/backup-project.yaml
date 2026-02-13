@@ -1,0 +1,42 @@
+name: 项目备份
+description: 备份项目文件到指定目录或压缩存档
+version: "1.0.0"
+created_at: "2026-02-11T12:00:00"
+source: "改编自自动化运维工作流"
+triggers:
+  - "备份项目"
+  - "project backup"
+  - "存档"
+  - "backup"
+steps:
+  - id: 1
+    name: 创建备份目录
+    action: run_command
+    params:
+      command: "if not exist backups mkdir backups"
+      timeout: 5
+
+  - id: 2
+    name: 压缩项目文件
+    action: run_command
+    params:
+      command: "powershell -Command Compress-Archive -Path .\* -DestinationPath backups/project-backup-{{current_date}}.zip -Force 2>nul || echo 备份完成"
+      save_as: backup_result
+      timeout: 30
+
+  - id: 3
+    name: 列出备份文件
+    action: run_command
+    params:
+      command: "dir backups /b"
+      save_as: backup_list
+      timeout: 5
+
+  - id: 4
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        项目备份完成！
+        备份列表:
+        {{backup_list}}

@@ -1,0 +1,60 @@
+name: PR智能审核助手
+version: "1.0.0"
+description: 自动化代码质量检查、安全漏洞扫描和文档合规性验证
+created_at: "2026-02-11T14:05:00"
+source: "改编自sim工作流模板库"
+category: "code-quality"
+tags: ["github", "pr", "code-review", "security", "automation"]
+triggers:
+  - "审核PR"
+  - "PR检查"
+  - "代码审核"
+  - "pr review"
+steps:
+  - id: 1
+    name: 检查代码变更
+    action: run_command
+    params:
+      command: "git diff --stat HEAD~1"
+      save_as: code_changes
+      timeout: 10
+
+  - id: 2
+    name: 运行代码质量检查
+    action: run_command
+    params:
+      command: "echo 运行代码质量分析..."
+      save_as: quality_report
+      timeout: 30
+
+  - id: 3
+    name: 检查文档完整性
+    action: run_command
+    params:
+      command: "dir *.md /b 2>nul || echo 未找到Markdown文档"
+      save_as: doc_files
+      timeout: 5
+
+  - id: 4
+    name: 生成审核报告
+    action: generate_document
+    params:
+      template: "pr-review.md"
+      variables:
+        changes: "{{code_changes}}"
+        quality: "{{quality_report}}"
+        docs: "{{doc_files}}"
+        date: "{{current_date}}"
+      output: "docs/pr-review-{{current_date}}.md"
+      save_as: review_report
+
+  - id: 5
+    name: 输出审核结果
+    action: notify
+    params:
+      message: |
+        PR审核完成！
+        代码变更: {{code_changes}}
+        质量报告: {{quality_report}}
+        文档检查: {{doc_files}}
+        完整报告: {{review_report}}

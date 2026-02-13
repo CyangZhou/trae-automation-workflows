@@ -1,0 +1,68 @@
+name: 销售线索智能培育
+version: "1.0.0"
+description: 线索评分、分段、个性化邮件序列和自动预约演示
+created_at: "2026-02-11T14:25:00"
+source: "改编自sim工作流模板库"
+category: "automation"
+tags: ["sales", "lead", "crm", "automation", "marketing"]
+triggers:
+  - "线索培育"
+  - "销售自动化"
+  - "lead nurturing"
+  - "销售线索"
+steps:
+  - id: 1
+    name: 获取新线索
+    action: run_command
+    params:
+      command: "echo 获取新提交的表单数据..."
+      save_as: lead_data
+      timeout: 5
+
+  - id: 2
+    name: 线索评分
+    action: run_command
+    params:
+      command: "echo 根据多维度数据计算线索评分..."
+      save_as: lead_score
+      timeout: 10
+
+  - id: 3
+    name: 客户分段
+    action: run_command
+    params:
+      command: "echo 根据评分和行为进行客户分段..."
+      save_as: lead_segment
+      timeout: 5
+
+  - id: 4
+    name: 生成个性化邮件
+    action: generate_document
+    params:
+      template: "sales-email.md"
+      variables:
+        lead: "{{lead_data}}"
+        score: "{{lead_score}}"
+        segment: "{{lead_segment}}"
+        date: "{{current_date}}"
+      output: "docs/sales-email-{{current_date}}.md"
+      save_as: email_template
+
+  - id: 5
+    name: 创建跟进任务
+    action: run_command
+    params:
+      command: "echo 创建CRM跟进任务..."
+      save_as: followup_task
+      timeout: 5
+
+  - id: 6
+    name: 输出培育计划
+    action: notify
+    params:
+      message: |
+        销售线索培育计划已生成！
+        线索评分: {{lead_score}}
+        客户分段: {{lead_segment}}
+        邮件模板: {{email_template}}
+        跟进任务: {{followup_task}}

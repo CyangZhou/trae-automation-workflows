@@ -1,0 +1,148 @@
+name: 代码覆盖率报告
+version: "2.1.0"
+description: 运行测试并生成代码覆盖率报告，自动安装缺失工具
+source: "改编自Codecov和Coveralls工作流"
+category: "code-quality"
+tags: ["coverage", "testing", "report", "ci", "automation", "auto-install"]
+triggers:
+  - "覆盖率报告"
+  - "测试覆盖率"
+  - "coverage report"
+  - "code coverage"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查并安装pytest
+    action: run_command
+    params:
+      command: "python -c \"import pytest; print('pytest:', pytest.__version__)\" 2>nul || (echo 正在安装pytest... && pip install pytest -q && echo pytest安装完成)"
+      timeout: 60
+
+  - id: 3
+    name: 验证pytest安装
+    action: verify
+    type: command_success
+    command: "python -c \"import pytest; print('pytest:', pytest.__version__)\""
+    fail_message: "pytest安装失败"
+
+  - id: 4
+    name: 检查并安装coverage
+    action: run_command
+    params:
+      command: "python -c \"import coverage; print('coverage:', coverage.__version__)\" 2>nul || (echo 正在安装coverage... && pip install coverage -q && echo coverage安装完成)"
+      timeout: 60
+
+  - id: 5
+    name: 验证coverage安装
+    action: verify
+    type: command_success
+    command: "python -c \"import coverage; print('coverage:', coverage.__version__)\""
+    fail_message: "coverage安装失败"
+
+  - id: 6
+    name: 查找测试文件
+    action: run_command
+    params:
+      command: "python -c \"import os; files=[f for r,d,fs in os.walk('.') for f in fs if 'test' in f.lower() and f.endswith('.py') and 'venv' not in r and '__pycache__' not in r]; print(f'找到 {len(files)} 个测试文件'); [print(f'  {os.path.join(r,f)}') for r,d,fs in os.walk('.') for f in fs if 'test' in f.lower() and f.endswith('.py') and 'venv' not in r][:10]]\""
+      save_as: test_files
+      timeout: 15
+
+  - id: 7
+    name: 运行覆盖率测试
+    action: run_command
+    params:
+      command: "python -m coverage run -m pytest tests/ -v --tb=short 2>nul || python -m coverage run -m pytest . -v --tb=short 2>nul || echo 无测试可运行"
+      timeout: 120
+
+  - id: 8
+    name: 生成覆盖率报告
+    action: run_command
+    params:
+      command: "python -m coverage report --omit='*/tests/*,*/__pycache__/*,*/venv/*,*/output/*' 2>nul"
+      save_as: coverage_report
+      timeout: 30
+
+  - id: 9
+    name: 验证覆盖率数据
+    action: verify
+    type: file_exists
+    path: ".coverage"
+    fail_message: "覆盖率数据文件未生成"
+
+  - id: 10
+    name: 生成XML报告
+    action: run_command
+    params:
+      command: "python -m coverage xml -o output/coverage.xml -q && echo XML报告已生成"
+      timeout: 15
+
+  - id: 11
+    name: 生成HTML报告
+    action: run_command
+    params:
+      command: "python -m coverage html -d output/htmlcov -q && echo HTML报告已生成"
+      timeout: 30
+
+  - id: 12
+    name: 验证HTML报告
+    action: verify
+    type: file_exists
+    path: "output/htmlcov/index.html"
+    fail_message: "HTML报告未生成"
+
+  - id: 13
+    name: 生成报告文档
+    action: generate_document
+    params:
+      output: "output/coverage-report-{{current_date}}.md"
+      content: |
+        # 代码覆盖率报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 测试文件
+        
+        {{test_files}}
+        
+        ## 覆盖率数据
+        
+        {{coverage_report}}
+        
+        ## 生成的文件
+        
+        - `output/coverage.xml` - XML格式报告
+        - `output/htmlcov/` - HTML格式报告
+        
+        ## 使用说明
+        
+        打开 `output/htmlcov/index.html` 查看详细覆盖率报告
+
+  - id: 14
+    name: 验证报告文件
+    action: verify
+    type: file_exists
+    path: "output/coverage-report-{{current_date}}.md"
+    fail_message: "报告文件未生成"
+
+  - id: 15
+    name: 输出结果
+    action: notify
+    params:
+      message: |
+        ✅ 代码覆盖率报告生成完成！
+        
+        测试文件:
+        {{test_files}}
+        
+        覆盖率报告:
+        {{coverage_report}}
+        
+        HTML报告: output/htmlcov/index.html
+        完整报告: output/coverage-report-{{current_date}}.md

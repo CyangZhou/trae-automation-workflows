@@ -1,0 +1,144 @@
+name: 客户支持工单自动处理
+version: "2.0.0"
+description: 基于意图识别的工单自动分类、优先级排序和标准回复生成
+created_at: "2026-02-11T14:10:00"
+source: "改编自sim工作流模板库"
+category: "automation"
+tags: ["support", "customer-service", "automation", "classification"]
+triggers:
+  - "工单处理"
+  - "支持自动化"
+  - "客服工单"
+  - "ticket automation"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查工单文件
+    action: run_command
+    params:
+      command: "python -c \"import os; files=[f for f in os.listdir('.') if 'ticket' in f.lower() and f.endswith(('.txt','.csv','.json'))]; print(f'找到 {len(files)} 个工单文件'); [print(f) for f in files[:10]]\""
+      save_as: ticket_files
+      timeout: 10
+
+  - id: 3
+    name: 分析工单内容
+    action: run_command
+    params:
+      command: "python -c \"import os,re; keywords={'bug':['错误','失败','崩溃','bug','error'],'feature':['建议','希望','功能','feature','request'],'billing':['账单','支付','收费','billing','payment']}; files=[f for f in os.listdir('.') if 'ticket' in f.lower() and f.endswith('.txt')]; results=[]; [results.extend([(f,k) for k,v in keywords.items() if any(kw in open(f,errors='ignore').read().lower() for kw in v)]) for f in files[:5]]; print(f'分析了 {len(files)} 个文件'); [print(f'  {r[0]}: {r[1]}') for r in results[:10]]\""
+      save_as: intent_analysis
+      timeout: 15
+
+  - id: 4
+    name: 生成工单模板
+    action: run_command
+    params:
+      command: |
+        python -c "
+        template = '''# 支持工单模板
+
+## 工单信息
+- 工单ID: AUTO-{{current_date}}-001
+- 创建时间: {{current_date}} {{current_time}}
+
+## 分类标签
+- 类型: [bug/feature/billing/other]
+- 优先级: [high/medium/low]
+- 状态: [open/in-progress/resolved]
+
+## 客户信息
+- 客户名称:
+- 联系方式:
+- 客户等级:
+
+## 问题描述
+[在此描述问题]
+
+## 处理记录
+| 时间 | 操作人 | 操作 |
+|------|--------|------|
+| | | |
+
+## 解决方案
+[解决方案描述]
+
+## 回复模板
+尊敬的客户：
+
+感谢您的反馈。我们已收到您的问题并正在处理中。
+
+预计处理时间：XX小时
+
+如有疑问，请随时联系我们。
+
+此致
+客服团队
+'''
+        with open('output/support-ticket-template.md', 'w', encoding='utf-8') as f:
+            f.write(template)
+        print('工单模板已生成')
+        "
+
+  - id: 5
+    name: 验证模板生成
+    action: verify
+    type: file_exists
+    path: "output/support-ticket-template.md"
+    fail_message: "工单模板未生成"
+
+  - id: 6
+    name: 生成处理报告
+    action: generate_document
+    params:
+      output: "output/support-automation-report-{{current_date}}.md"
+      content: |
+        # 支持工单自动化报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 工单文件
+        
+        {{ticket_files}}
+        
+        ## 意图分析
+        
+        {{intent_analysis}}
+        
+        ## 生成的文件
+        
+        - `output/support-ticket-template.md` - 工单模板
+        
+        ## 使用说明
+        
+        1. 将工单文件放入项目目录
+        2. 运行此工作流自动分析
+        3. 使用生成的模板回复客户
+
+  - id: 7
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/support-automation-report-{{current_date}}.md"
+    fail_message: "报告未生成"
+
+  - id: 8
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        ✅ 工单处理完成！
+        
+        工单文件:
+        {{ticket_files}}
+        
+        意图分析:
+        {{intent_analysis}}
+        
+        模板: output/support-ticket-template.md
+        报告: output/support-automation-report-{{current_date}}.md

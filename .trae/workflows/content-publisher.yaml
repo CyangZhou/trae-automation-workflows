@@ -1,0 +1,69 @@
+name: 多平台内容自动发布
+version: "1.0.0"
+description: 一次创作，多平台自适应发布，包括格式转换和平台特定优化
+created_at: "2026-02-11T14:15:00"
+source: "改编自sim工作流模板库"
+category: "automation"
+tags: ["content", "publishing", "social-media", "automation", "marketing"]
+triggers:
+  - "发布内容"
+  - "内容发布"
+  - "多平台发布"
+  - "content publish"
+steps:
+  - id: 1
+    name: 获取内容源
+    action: run_command
+    params:
+      command: "echo 获取原始内容..."
+      save_as: raw_content
+      timeout: 5
+
+  - id: 2
+    name: 提取元数据
+    action: run_command
+    params:
+      command: "echo 提取标题、摘要、关键词..."
+      save_as: metadata
+      timeout: 10
+
+  - id: 3
+    name: 适配Twitter格式
+    action: run_command
+    params:
+      command: "echo 转换为Twitter线程格式..."
+      save_as: twitter_version
+      timeout: 5
+
+  - id: 4
+    name: 适配LinkedIn格式
+    action: run_command
+    params:
+      command: "echo 转换为LinkedIn文章格式..."
+      save_as: linkedin_version
+      timeout: 5
+
+  - id: 5
+    name: 生成发布计划
+    action: generate_document
+    params:
+      template: "content-publishing-plan.md"
+      variables:
+        content: "{{raw_content}}"
+        metadata: "{{metadata}}"
+        twitter: "{{twitter_version}}"
+        linkedin: "{{linkedin_version}}"
+        date: "{{current_date}}"
+      output: "docs/publishing-plan-{{current_date}}.md"
+      save_as: publishing_plan
+
+  - id: 6
+    name: 输出发布计划
+    action: notify
+    params:
+      message: |
+        内容发布计划已生成！
+        元数据: {{metadata}}
+        Twitter版本: {{twitter_version}}
+        LinkedIn版本: {{linkedin_version}}
+        完整计划: {{publishing_plan}}

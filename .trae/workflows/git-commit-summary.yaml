@@ -1,0 +1,111 @@
+name: Git提交摘要
+description: 自动获取最近git提交记录并生成摘要文档
+version: "2.0.0"
+created_at: "2026-02-11T11:00:00"
+triggers:
+  - "生成提交摘要"
+  - "git summary"
+  - "周报"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检查Git仓库
+    action: run_command
+    params:
+      command: "git rev-parse --git-dir 2>nul && echo Git仓库存在 || echo 非Git仓库"
+      save_as: git_check
+      timeout: 5
+
+  - id: 3
+    name: 获取Git提交记录
+    action: run_command
+    params:
+      command: "git log --since='1 week ago' --pretty=format:'%h - %s (%ar)' --no-merges -20 2>nul || echo 无Git历史"
+      save_as: git_commits
+      timeout: 10
+
+  - id: 4
+    name: 获取代码统计
+    action: run_command
+    params:
+      command: "git diff --shortstat HEAD~10..HEAD 2>nul || echo 无Git统计"
+      save_as: git_stats
+      timeout: 10
+
+  - id: 5
+    name: 获取贡献者统计
+    action: run_command
+    params:
+      command: "git shortlog -sn --since='1 week ago' 2>nul || echo 无贡献者数据"
+      save_as: contributors
+      timeout: 10
+
+  - id: 6
+    name: 获取分支信息
+    action: run_command
+    params:
+      command: "python -c \"import subprocess; r=subprocess.run(['git','branch','-a'],capture_output=True,text=True); lines=r.stdout.strip().split('\\n')[:10]; print('\\n'.join(lines)) if r.returncode==0 else print('无分支信息')\""
+      save_as: branches
+      timeout: 5
+
+  - id: 7
+    name: 生成摘要文档
+    action: generate_document
+    params:
+      output: "output/git-summary-{{current_date}}.md"
+      content: |
+        # Git提交摘要
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 仓库状态
+        
+        {{git_check}}
+        
+        ## 最近提交
+        
+        {{git_commits}}
+        
+        ## 代码变更统计
+        
+        {{git_stats}}
+        
+        ## 贡献者
+        
+        {{contributors}}
+        
+        ## 分支
+        
+        {{branches}}
+        
+        ---
+        *由 Trae 自动生成*
+
+  - id: 8
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/git-summary-{{current_date}}.md"
+    fail_message: "Git摘要未生成"
+
+  - id: 9
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        ✅ Git提交摘要已生成！
+        
+        最近提交:
+        {{git_commits}}
+        
+        统计:
+        {{git_stats}}
+        
+        报告: output/git-summary-{{current_date}}.md

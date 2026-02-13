@@ -1,0 +1,69 @@
+name: 数据处理自动化
+version: "1.0.0"
+description: 批量处理文件、转换格式、清洗数据并生成报告
+created_at: "2026-02-11T15:50:00"
+source: "改编自Claude Code自动化指南"
+category: "automation"
+tags: ["data-processing", "automation", "etl", "batch"]
+triggers:
+  - "处理数据"
+  - "数据清洗"
+  - "批量处理"
+  - "data processing"
+steps:
+  - id: 1
+    name: 扫描数据文件
+    action: run_command
+    params:
+      command: "echo 扫描待处理的数据文件..."
+      save_as: data_files
+      timeout: 10
+
+  - id: 2
+    name: 数据清洗
+    action: run_command
+    params:
+      command: "echo 清洗数据、处理缺失值..."
+      save_as: cleaned_data
+      timeout: 15
+
+  - id: 3
+    name: 格式转换
+    action: run_command
+    params:
+      command: "echo 转换数据格式..."
+      save_as: converted_data
+      timeout: 15
+
+  - id: 4
+    name: 数据分析
+    action: run_command
+    params:
+      command: "echo 分析数据统计特征..."
+      save_as: analysis
+      timeout: 10
+
+  - id: 5
+    name: 生成处理报告
+    action: generate_document
+    params:
+      template: "data-processing.md"
+      variables:
+        files: "{{data_files}}"
+        cleaned: "{{cleaned_data}}"
+        converted: "{{converted_data}}"
+        analysis: "{{analysis}}"
+        date: "{{current_date}}"
+      output: "docs/data-processing-{{current_date}}.md"
+      save_as: report_path
+
+  - id: 6
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        数据处理完成！
+        处理文件: {{data_files}}
+        清洗结果: {{cleaned_data}}
+        格式转换: {{converted_data}}
+        分析报告: {{report_path}}

@@ -1,0 +1,93 @@
+name: Docker本地构建
+version: "1.0.0"
+description: 本地构建Docker镜像并查看构建信息
+created_at: "2026-02-11"
+category: deployment
+tags: ["docker", "container", "build", "image"]
+triggers:
+  - "构建Docker镜像"
+  - "docker build"
+  - "打包镜像"
+steps:
+  - id: 1
+    name: 检查Docker环境
+    action: run_command
+    params:
+      command: "docker --version && docker info --format 'Server Version: {{.ServerVersion}}'"
+      save_as: docker_version
+      timeout: 10
+
+  - id: 2
+    name: 查找Dockerfile
+    action: run_command
+    params:
+      command: "dir Dockerfile* /b /s 2>nul | head -5 || echo 未找到Dockerfile"
+      save_as: dockerfile_list
+      timeout: 5
+
+  - id: 3
+    name: 分析Dockerfile内容
+    action: run_command
+    params:
+      command: "type Dockerfile 2>nul || echo 未找到Dockerfile"
+      save_as: dockerfile_content
+      timeout: 5
+
+  - id: 4
+    name: 构建Docker镜像
+    action: run_command
+    params:
+      command: "docker build -t myapp:latest . 2>&1 || echo 构建失败，请检查Dockerfile"
+      save_as: build_output
+      timeout: 300
+
+  - id: 5
+    name: 查看镜像信息
+    action: run_command
+    params:
+      command: "docker images myapp:latest --format 'Size: {{.Size}} | Created: {{.CreatedAt}}'"
+      save_as: image_info
+      timeout: 10
+
+  - id: 6
+    name: 扫描镜像漏洞（如果安装了trivy）
+    action: run_command
+    params:
+      command: "trivy image myapp:latest 2>nul || echo Trivy未安装，跳过漏洞扫描（安装: https://aquasecurity.github.io/trivy）"
+      save_as: security_scan
+      timeout: 120
+
+  - id: 7
+    name: 生成构建报告
+    action: generate_document
+    params:
+      template: "docker-build-report.md"
+      variables:
+        docker_version: "{{docker_version}}"
+        dockerfile_list: "{{dockerfile_list}}"
+        dockerfile_content: "{{dockerfile_content}}"
+        build_output: "{{build_output}}"
+        image_info: "{{image_info}}"
+        security_scan: "{{security_scan}}"
+        date: "{{current_date}}"
+      output: "docs/docker-build-report-{{current_date}}.md"
+      save_as: report_file
+
+  - id: 8
+    name: 输出构建结果
+    action: notify
+    params:
+      message: |
+        Docker构建完成！
+        Docker版本: {{docker_version}}
+        
+        找到的配置文件:
+        {{dockerfile_list}}
+        
+        镜像信息:
+        {{image_info}}
+        
+        安全扫描:
+        {{security_scan}}
+        
+        完整报告: {{report_file}}

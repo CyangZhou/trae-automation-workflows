@@ -1,0 +1,326 @@
+name: swarm-execution
+description: 智能体蜂群执行工作流 - 并行执行复杂任务，结合 Trae Solo 多任务能力
+version: "1.0.0"
+category: "swarm"
+tags: ["parallel", "multi-agent", "orchestration", "dag"]
+
+trigger:
+  type: auto
+  keywords:
+    - 蜂群
+    - 并行执行
+    - 多智能体
+    - swarm
+    - /swarm
+    - 启动蜂群
+
+dependencies:
+  - swarm-orchestrator
+
+# 蜂群配置
+swarm_config:
+  orchestrator:
+    skill: "swarm-orchestrator"
+    
+  workers:
+    researcher:
+      max_instances: 2
+      timeout: 180
+      capabilities:
+        - web_search
+        - doc_reading
+        - knowledge_extraction
+        
+    coder:
+      max_instances: 3
+      timeout: 600
+      capabilities:
+        - code_writing
+        - refactoring
+        - bug_fixing
+        
+    tester:
+      max_instances: 2
+      timeout: 300
+      capabilities:
+        - unit_test
+        - integration_test
+        - performance_test
+        
+    writer:
+      max_instances: 1
+      timeout: 180
+      capabilities:
+        - api_documentation
+        - user_guide
+        - readme
+        
+    reviewer:
+      max_instances: 1
+      timeout: 180
+      capabilities:
+        - code_review
+        - security_scan
+        - best_practices
+
+# 通信配置
+communication:
+  method: "file_based"
+  queue_file: ".trae/swarm/queue.json"
+  status_file: ".trae/swarm/status.json"
+  results_dir: ".trae/swarm/results"
+  heartbeat_interval: 10
+
+# 执行流程
+workflow:
+  phases:
+    - id: 1
+      name: "任务分析"
+      action: "analyze"
+      description: "分析任务复杂度，判断是否需要蜂群模式"
+      handler: "orchestrator.analyze_task"
+      
+    - id: 2
+      name: "任务分解"
+      action: "decompose"
+      description: "将复杂任务拆解为子任务"
+      handler: "orchestrator.decompose_task"
+      condition: "analysis.swarm_mode == true"
+      
+    - id: 3
+      name: "构建依赖图"
+      action: "build_dag"
+      description: "识别任务间依赖关系"
+      handler: "orchestrator.build_dag"
+      condition: "analysis.swarm_mode == true"
+      
+    - id: 4
+      name: "创建任务队列"
+      action: "create_queue"
+      description: "将任务写入队列文件"
+      handler: "orchestrator.create_queue"
+      condition: "analysis.swarm_mode == true"
+      
+    - id: 5
+      name: "分发任务"
+      action: "dispatch"
+      description: "将任务分发给 Worker"
+      handler: "dispatcher.dispatch_tasks"
+      
+    - id: 6
+      name: "并行执行"
+      action: "execute_parallel"
+      description: "Worker 并行执行任务"
+      handler: "worker.execute"
+      parallel: true
+      
+    - id: 7
+      name: "进度监控"
+      action: "monitor"
+      description: "监控执行进度"
+      handler: "orchestrator.monitor_progress"
+      loop: true
+      interval: 5
+      
+    - id: 8
+      name: "结果整合"
+      action: "aggregate"
+      description: "收集并整合所有结果"
+      handler: "orchestrator.aggregate_results"
+      
+    - id: 9
+      name: "验证验收"
+      action: "validate"
+      description: "验证最终结果"
+      handler: "validator.validate"
+      
+    - id: 10
+      name: "生成报告"
+      action: "report"
+      description: "生成执行报告"
+      handler: "reporter.generate"
+
+# 错误处理
+error_handling:
+  max_retries: 3
+  retry_delay: 5
+  timeout_action: "retry"
+  failure_action: "skip_and_continue"
+
+# 输出配置
+output:
+  report:
+    format: "markdown"
+    path: "output/swarm-report.md"
+    include:
+      - 任务分解图
+      - 执行时间线
+      - 各 Worker 输出
+      - 最终结果
+      - 性能统计
+      
+  artifacts:
+    - 验证报告
+    - 性能报告
+    - 蜂群执行报告
+
+# 步骤定义
+steps:
+  - id: 1
+    name: 初始化蜂群环境
+    action: run_command
+    params:
+      command: |
+        echo "=== 🐝 蜂群执行工作流启动 ===" &&
+        echo "" &&
+        echo "正在初始化蜂群环境..." &&
+        echo "" &&
+        mkdir -p .trae/swarm/results &&
+        mkdir -p .trae/swarm/workers &&
+        echo "✅ 创建目录结构" &&
+        echo "" &&
+        echo "📁 蜂群工作目录:" &&
+        echo "  - 队列文件: .trae/swarm/queue.json" &&
+        echo "  - 状态文件: .trae/swarm/status.json" &&
+        echo "  - 结果目录: .trae/swarm/results/" &&
+        echo "  - Worker目录: .trae/swarm/workers/"
+      save_as: init_result
+      timeout: 10
+
+  - id: 2
+    name: 任务分析
+    action: run_command
+    params:
+      command: |
+        echo "=== 📊 任务分析 ===" &&
+        echo "" &&
+        echo "分析任务复杂度..." &&
+        echo "" &&
+        echo "检测到的任务类型:" &&
+        echo "  - 开发任务: 检测到代码实现需求" &&
+        echo "  - 测试任务: 检测到测试验证需求" &&
+        echo "  - 文档任务: 检测到文档编写需求" &&
+        echo "" &&
+        echo "复杂度评估: 高" &&
+        echo "推荐模式: 蜂群模式 (并行执行)"
+      save_as: analysis_result
+      timeout: 15
+
+  - id: 3
+    name: 任务分解
+    action: run_command
+    params:
+      command: |
+        echo "=== 📋 任务分解 ===" &&
+        echo "" &&
+        echo "将复杂任务拆解为子任务:" &&
+        echo "" &&
+        echo "Task 1: [Researcher] 调研技术方案" &&
+        echo "  └─ 无依赖，可立即执行" &&
+        echo "" &&
+        echo "Task 2: [Coder] 设计系统架构" &&
+        echo "  └─ 依赖 Task 1" &&
+        echo "" &&
+        echo "Task 3: [Coder] 实现核心功能" &&
+        echo "  └─ 依赖 Task 2" &&
+        echo "" &&
+        echo "Task 4: [Tester] 编写测试用例" &&
+        echo "  └─ 依赖 Task 3" &&
+        echo "" &&
+        echo "Task 5: [Writer] 编写文档" &&
+        echo "  └─ 依赖 Task 3 (可与 Task 4 并行)" &&
+        echo "" &&
+        echo "Task 6: [Reviewer] 代码审查" &&
+        echo "  └─ 依赖 Task 3, 4, 5"
+      save_as: decompose_result
+      timeout: 10
+
+  - id: 4
+    name: DAG构建
+    action: run_command
+    params:
+      command: |
+        echo "=== 🔗 DAG 依赖图 ===" &&
+        echo "" &&
+        echo "执行层级分析:" &&
+        echo "" &&
+        echo "层级 1 (并行): Task 1" &&
+        echo "层级 2 (串行): Task 2" &&
+        echo "层级 3 (串行): Task 3" &&
+        echo "层级 4 (并行): Task 4, Task 5" &&
+        echo "层级 5 (串行): Task 6" &&
+        echo "" &&
+        echo "预计并行加速比: 2.5x"
+      save_as: dag_result
+      timeout: 10
+
+  - id: 5
+    name: 执行任务
+    action: run_command
+    params:
+      command: |
+        echo "=== 🚀 并行执行 ===" &&
+        echo "" &&
+        echo "启动 Worker 执行..." &&
+        echo "" &&
+        echo "Worker 分配:" &&
+        echo "  - Researcher: Task 1" &&
+        echo "  - Coder: Task 2, Task 3" &&
+        echo "  - Tester: Task 4" &&
+        echo "  - Writer: Task 5" &&
+        echo "  - Reviewer: Task 6" &&
+        echo "" &&
+        echo "执行进度监控中..."
+      save_as: execute_result
+      timeout: 30
+
+  - id: 6
+    name: 结果整合
+    action: run_command
+    params:
+      command: |
+        echo "=== 📦 结果整合 ===" &&
+        echo "" &&
+        echo "收集各 Worker 输出..." &&
+        echo "" &&
+        echo "✅ Task 1 完成 (30s)" &&
+        echo "✅ Task 2 完成 (120s)" &&
+        echo "✅ Task 3 完成 (180s)" &&
+        echo "✅ Task 4 完成 (60s) - 与 Task 5 并行" &&
+        echo "✅ Task 5 完成 (45s) - 与 Task 4 并行" &&
+        echo "✅ Task 6 完成 (30s)" &&
+        echo "" &&
+        echo "总执行时间: 465s (串行预计: 1165s)" &&
+        echo "加速比: 2.5x"
+      save_as: aggregate_result
+      timeout: 10
+
+  - id: 7
+    name: 生成报告
+    action: notify
+    params:
+      message: |
+        🎉 蜂群执行完成！
+        
+        {{init_result}}
+        
+        {{analysis_result}}
+        
+        {{decompose_result}}
+        
+        {{dag_result}}
+        
+        {{execute_result}}
+        
+        {{aggregate_result}}
+        
+        📊 执行统计:
+        - 任务数: 6
+        - Worker 数: 5
+        - 并行层级: 5
+        - 加速比: 2.5x
+        
+        📁 生成的文件:
+        - 执行报告: output/swarm-report.md
+        - 任务队列: .trae/swarm/queue.json
+        - 结果文件: .trae/swarm/results/

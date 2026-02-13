@@ -1,0 +1,284 @@
+name: autonomous-agent
+version: "3.1.0"
+description: 自主执行层 v3.1 - 强制检查点、知识先行、动态规划、自动修复、工作流生成、强制验证
+
+# 🚨 强制检查点配置（v3.1 新增 - 最高优先级）
+checkpoints:
+  enabled: true
+  mandatory: true
+  fail_on_missing: true
+  
+  required_checkpoints:
+    - id: "checkpoint_1"
+      name: "初始化完成"
+      description: "执行 Python 初始化命令"
+      required_output: "[检查点1] ✅ 初始化完成"
+      
+    - id: "checkpoint_2"
+      name: "任务解析完成"
+      description: "分析核心目标、复杂度、执行模式"
+      required_output: "[检查点2] ✅ 任务解析完成"
+      
+    - id: "checkpoint_3"
+      name: "智能推荐完成"
+      description: "调用 intelligent-workflow-assistant 并解析结果"
+      required_output: "[检查点3] ✅ 智能推荐完成"
+      
+    - id: "checkpoint_4"
+      name: "执行模式选择完成"
+      description: "调用 swarm-orchestrator 或 workflow-runner"
+      required_output: "[检查点4] ✅ 执行模式选择完成"
+      
+    - id: "checkpoint_5"
+      name: "验证完成"
+      description: "语法检查、功能测试、目标验证"
+      required_output: "[检查点5] ✅ 验证完成"
+      
+    - id: "checkpoint_6"
+      name: "知识沉淀完成"
+      description: "保存执行经验到 .trae/knowledge/"
+      required_output: "[检查点6] ✅ 知识沉淀完成"
+
+  # 禁止行为
+  forbidden_actions:
+    - "跳过任何检查点"
+    - "在完成步骤1-4之前开始编码"
+    - "忽略 intelligent-workflow-assistant 的返回结果"
+    - "省略检查点输出"
+
+triggers:
+  - "开始"
+  - "继续"
+  - "自主执行"
+  - "自动规划"
+  - "自动修复"
+  - "autonomous"
+  - "agent执行"
+  - "智能工作流"
+  - "智能路由"
+
+category: "automation"
+tags:
+  - "autonomous"
+  - "routing"
+  - "validation"
+  - "self-healing"
+  - "workflow"
+  - "knowledge-research"
+
+# ⭐ 知识调研配置（v3.0 新增）
+knowledge_research:
+  enabled: true
+  mandatory: true
+  
+  # 初始化检查（自动执行）
+  auto_init:
+    enabled: true                    # 启用自动初始化
+    check_on_start: true             # 每次启动时检查
+    create_if_missing: true          # 不存在时自动创建
+    
+  # 触发条件
+  triggers:
+    new_tech: true              # 新技术必须调研
+    version_upgrade: true       # 版本升级必须调研
+    industry_specific: true     # 行业特定知识必须调研
+    cross_domain: true          # 跨领域任务必须调研
+    no_workflow: true           # ⭐ 无可用工作流时必须调研
+  
+  # 知识源优先级
+  sources:
+    - type: "official_docs"
+      priority: 0
+      description: "官方文档"
+      examples: ["react.dev", "vuejs.org", "python.org"]
+      
+    - type: "industry_standards"
+      priority: 1
+      description: "行业标准/规范"
+      examples: ["OpenAPI Spec", "W3C标准", "ISO标准"]
+      
+    - type: "official_blog"
+      priority: 2
+      description: "官方博客"
+      examples: ["React Blog", "Node.js Blog"]
+      
+    - type: "github"
+      priority: 3
+      description: "GitHub仓库、Issues、Discussions"
+      
+    - type: "tech_community"
+      priority: 4
+      description: "技术社区"
+      examples: ["Stack Overflow", "Dev.to"]
+      
+    - type: "tutorials"
+      priority: 5
+      description: "专业教程"
+  
+  # 调研流程配置
+  workflow:
+    max_research_time: 300      # 最大调研时间（秒）
+    cross_validate: true        # 交叉验证
+    min_sources: 2              # 最少验证来源数
+    recency_months: 12          # 信息时效性（月）
+  
+  # 知识存储
+  storage:
+    base_dir: ".trae/knowledge"
+    index_file: ".trae/knowledge/index.json"
+    template_dir: ".trae/knowledge/_templates"
+    
+  # 知识时效性
+  freshness:
+    check_on_use: true          # 使用时检查时效
+    warn_after_months: 12       # 超过此月数警告
+    expire_after_months: 24     # 超过此月数标记过期
+
+# 智能路由配置
+routing:
+  # 任务类型识别
+  task_patterns:
+    standard:
+      patterns:
+        - "安全扫描"
+        - "代码审查"
+        - "测试覆盖率"
+        - "依赖检查"
+        - "性能测试"
+        - "security"
+        - "review"
+        - "test"
+        - "coverage"
+      action: "workflow"
+      reason: "标准化任务，使用预定义工作流"
+      require_research: false
+      
+    repetitive:
+      patterns:
+        - "每天"
+        - "每周"
+        - "定时"
+        - "自动"
+        - "周期"
+        - "daily"
+        - "weekly"
+        - "schedule"
+      action: "workflow"
+      reason: "重复性任务，生成可复用工作流"
+      require_research: false
+      
+    one_time:
+      patterns:
+        - "帮我写"
+        - "修改这个"
+        - "优化一下"
+        - "修复"
+        - "创建"
+        - "write"
+        - "modify"
+        - "optimize"
+        - "fix"
+      action: "builtin"
+      reason: "一次性任务，使用内置工具"
+      require_research: true     # 检测是否涉及新技术
+      
+    complex:
+      patterns:
+        - "重构"
+        - "架构"
+        - "系统设计"
+        - "迁移"
+        - "集成"
+        - "refactor"
+        - "architecture"
+      action: "hybrid"
+      reason: "复杂任务，混合模式"
+      require_research: true     # 复杂任务必须调研
+
+# 验证配置（强制执行）
+validation:
+  enabled: true
+  strict: true
+  
+  code_quality:
+    - name: "语法检查"
+      type: "lint"
+      fail_action: "block"
+      
+    - name: "类型检查"
+      type: "typecheck"
+      fail_action: "block"
+      
+    - name: "内存泄漏检查"
+      type: "memory"
+      checks:
+        - "定时器清理"
+        - "事件监听器清理"
+        - "DOM引用清理"
+      fail_action: "block"
+      
+  runtime:
+    - name: "功能测试"
+      type: "functional"
+      fail_action: "block"
+      
+    - name: "边界测试"
+      type: "boundary"
+      fail_action: "warn"
+      
+  goal_achievement:
+    enabled: true
+    check_original_goal: true
+    verify_functionality: true
+
+# 执行配置
+execution:
+  # 智能路由脚本
+  router_script: ".trae/workflows/smart_router.py"
+  
+  # 自主执行脚本
+  agent_script: ".trae/workflows/autonomous_agent.py"
+  
+  # 命令模板
+  commands:
+    analyze: "python {router_script} \"{task}\" --files {files}"
+    execute: "python {agent_script} task \"{task}\""
+    validate: "python {router_script} \"{task}\" --files {files}"
+    
+  # 预设命令
+  presets:
+    security: "python {agent_script} security"
+    review: "python {agent_script} review"
+    test: "python {agent_script} test"
+    deps: "python {agent_script} deps"
+    analyze: "python {agent_script} analyze"
+
+# 工作流集成
+integration:
+  workflow_manager: ".trae/workflows/workflow_manager_v2.py"
+  workflow_dirs:
+    - ".trae/workflows"
+    - "C:/Users/Administrator/.trae-cn/workflows"
+
+# 输出配置
+output:
+  report_dir: "output"
+  report_format: "markdown"
+  include_validation: true
+  include_execution_log: true
+  include_knowledge_research: true  # v3.0 新增
+
+# 自动执行配置
+auto_execute:
+  # 触发时自动执行验证
+  on_trigger: true
+  # 失败时自动修复
+  auto_heal: true
+  # 最大修复尝试次数（设为极大值，几乎不停止）
+  max_heal_attempts: 999
+  # 永不停止标志
+  never_stop: true
+  # 静默模式：不询问用户，自动处理
+  silent_mode: true
+  # 知识调研失败时继续执行
+  continue_on_research_failure: true

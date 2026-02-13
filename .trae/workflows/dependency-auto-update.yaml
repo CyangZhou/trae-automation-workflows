@@ -1,0 +1,134 @@
+name: 依赖自动更新
+version: "2.1.0"
+description: 检测依赖包新版本，自动检查安全漏洞，自动安装缺失工具
+source: "改编自Dependabot和Renovate工作流"
+category: "automation"
+tags: ["dependency", "update", "security", "automation", "maintenance", "auto-install"]
+triggers:
+  - "更新依赖"
+  - "检查依赖"
+  - "dependency update"
+  - "依赖升级"
+
+steps:
+  - id: 1
+    name: 创建输出目录
+    action: run_command
+    params:
+      command: "python -c \"import os; os.makedirs('output', exist_ok=True)\""
+      timeout: 5
+
+  - id: 2
+    name: 检测Python项目
+    action: run_command
+    params:
+      command: "python -c \"import os; print('requirements.txt存在' if os.path.exists('requirements.txt') else '未找到requirements.txt')\""
+      save_as: python_project
+      timeout: 5
+
+  - id: 3
+    name: 检查并安装pip-audit
+    action: run_command
+    params:
+      command: "python -c \"import pip_audit; print('pip-audit已安装')\" 2>nul || (echo 正在安装pip-audit... && pip install pip-audit -q && echo pip-audit安装完成)"
+      timeout: 60
+
+  - id: 4
+    name: 验证pip-audit安装
+    action: verify
+    type: command_success
+    command: "python -c \"import pip_audit; print('pip-audit已安装')\""
+    fail_message: "pip-audit安装失败"
+
+  - id: 5
+    name: 检查pip可更新包
+    action: run_command
+    params:
+      command: "python -m pip list --outdated --format=json 2>nul > output/pip-outdated.json && python -c \"import json; d=json.load(open('output/pip-outdated.json')); print(f'可更新: {len(d)}个包'); [print(f\\\"  {p['name']}: {p['version']} -> {p['latest_version']}\\\") for p in d[:15]]\" || echo pip检查完成"
+      save_as: pip_outdated
+      timeout: 60
+
+  - id: 6
+    name: 检查npm可更新包
+    action: run_command
+    params:
+      command: "npm outdated --json 2>nul > output/npm-outdated.json && python -c \"import json; d=json.load(open('output/npm-outdated.json')); print(f'可更新: {len(d)}个包'); [print(f\\\"  {k}: {v['current']} -> {v['latest']}\\\") for k,v in list(d.items())[:15]]\" || echo npm检查跳过(非Node.js项目)"
+      save_as: npm_outdated
+      timeout: 60
+
+  - id: 7
+    name: 检查安全漏洞
+    action: run_command
+    params:
+      command: "python -m pip_audit --format=json > output/pip-audit.json 2>nul && python -c \"import json; d=json.load(open('output/pip-audit.json')); vulns=d.get('vulnerabilities',[]) if isinstance(d,dict) else []; print(f'发现 {len(vulns)} 个漏洞'); [print(f\\\"  {v.get('name','?')}: {v.get('id','?')}\\\") for v in vulns[:10]]\" || echo 安全检查完成"
+      save_as: security_audit
+      timeout: 60
+
+  - id: 8
+    name: 生成更新报告
+    action: generate_document
+    params:
+      output: "output/dependency-update-report-{{current_date}}.md"
+      content: |
+        # 依赖更新报告
+        
+        **生成时间**: {{current_date}} {{current_time}}
+        
+        ## 项目检测
+        
+        - Python: {{python_project}}
+        
+        ## Python包更新
+        
+        {{pip_outdated}}
+        
+        ## Node.js包更新
+        
+        {{npm_outdated}}
+        
+        ## 安全漏洞
+        
+        {{security_audit}}
+        
+        ## 生成的文件
+        
+        - `output/pip-outdated.json`
+        - `output/npm-outdated.json`
+        - `output/pip-audit.json`
+        
+        ## 更新命令
+        
+        ```bash
+        # Python
+        pip install --upgrade pip
+        pip list --outdated --format=freeze | ForEach-Object { pip install -U ($_ -split '==')[0] }
+        
+        # Node.js
+        npm update
+        npm audit fix
+        ```
+
+  - id: 9
+    name: 验证报告生成
+    action: verify
+    type: file_exists
+    path: "output/dependency-update-report-{{current_date}}.md"
+    fail_message: "依赖报告未生成"
+
+  - id: 10
+    name: 输出结果
+    action: notify
+    params:
+      message: |
+        ✅ 依赖检查完成！
+        
+        Python更新:
+        {{pip_outdated}}
+        
+        Node.js更新:
+        {{npm_outdated}}
+        
+        安全漏洞:
+        {{security_audit}}
+        
+        报告: output/dependency-update-report-{{current_date}}.md

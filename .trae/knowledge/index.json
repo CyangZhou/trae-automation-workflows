@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "created_at": "2026-02-12",
+  "project_path": "e:\\traework\\00 ai助手研发",
+  "entries": [
+    {
+      "id": "agent-swarm-001",
+      "title": "智能体蜂群架构调研",
+      "category": "agent-swarm",
+      "file": "agent-swarm/agent-swarm-research.md",
+      "created_at": "2026-02-13",
+      "tags": ["multi-agent", "orchestration", "swarm", "parallel-execution"],
+      "summary": "Orchestrator-Workers 模式、并行强化学习、L1-L4 层级、最佳实践"
+    },
+    {
+      "id": "trae-solo-001",
+      "title": "Trae Solo 多智能体架构调研",
+      "category": "trae-solo",
+      "file": "trae-solo/trae-solo-research.md",
+      "created_at": "2026-02-13",
+      "tags": ["trae", "solo", "subagent", "parallel", "context-management"],
+      "summary": "Solo Coder、Subagent、多任务并行、Plan Mode、上下文管理"
+    },
+    {
+      "id": "agent-swarm-002",
+      "title": "智能体蜂群架构设计方案",
+      "category": "agent-swarm",
+      "file": "agent-swarm/swarm-architecture-design.md",
+      "created_at": "2026-02-13",
+      "tags": ["architecture", "design", "orchestrator", "worker", "dag"],
+      "summary": "完整架构设计、通信协议、DAG调度、与Trae Solo集成方案"
+    },
+    {
+      "id": "github-pages-001",
+      "title": "GitHub Pages 部署指南",
+      "category": "github-pages-deploy",
+      "file": "github-pages-deploy/github-pages-deploy-guide.md",
+      "created_at": "2026-02-13",
+      "tags": ["github", "pages", "deploy", "git", "static-webpage"],
+      "summary": "静态网页上传GitHub并部署到GitHub Pages的完整流程"
+    }
+  ]
+}

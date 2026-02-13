@@ -1,0 +1,66 @@
+name: API文档自动生成
+version: "1.0.0"
+description: 自动分析代码生成API文档，包含接口说明、参数定义和示例
+created_at: "2026-02-11T15:35:00"
+source: "改编自Claude Code最佳实践"
+category: "documentation"
+tags: ["api", "documentation", "code-analysis", "automation"]
+triggers:
+  - "生成API文档"
+  - "API文档"
+  - "文档生成"
+  - "api docs"
+steps:
+  - id: 1
+    name: 扫描API代码
+    action: run_command
+    params:
+      command: "echo 扫描项目中的API接口代码..."
+      save_as: api_code
+      timeout: 10
+
+  - id: 2
+    name: 解析接口定义
+    action: run_command
+    params:
+      command: "echo 解析接口路径、方法、参数..."
+      save_as: api_definitions
+      timeout: 15
+
+  - id: 3
+    name: 提取参数信息
+    action: run_command
+    params:
+      command: "echo 提取请求参数和响应格式..."
+      save_as: parameters
+      timeout: 10
+
+  - id: 4
+    name: 生成示例代码
+    action: run_command
+    params:
+      command: "echo 生成调用示例..."
+      save_as: examples
+      timeout: 10
+
+  - id: 5
+    name: 生成API文档
+    action: generate_document
+    params:
+      template: "api-documentation.md"
+      variables:
+        definitions: "{{api_definitions}}"
+        parameters: "{{parameters}}"
+        examples: "{{examples}}"
+        date: "{{current_date}}"
+      output: "docs/api-documentation-{{current_date}}.md"
+      save_as: doc_path
+
+  - id: 6
+    name: 完成通知
+    action: notify
+    params:
+      message: |
+        API文档生成完成！
+        接口数量: {{api_definitions}}
+        文档路径: {{doc_path}}
